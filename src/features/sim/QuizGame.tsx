@@ -1,9 +1,11 @@
+import { IOS } from '../../lib/colors';
+import { Icon } from '../../components/Icon';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { KEYWAY_QUESTIONS, XRAY_QUESTIONS } from '../../data/quiz';
 import { KeywayArt, SilhouetteArt, XrayArt } from '../../components/svg/Art';
 import { shuffle } from '../../lib/random';
-import { Button, Card, Segmented, SectionTitle } from '../../components/ui';
+import { Button, Card, Segmented, SectionTitle, IconTile } from '../../components/ui';
 import { useStore } from '../../store/AppStore';
 import { sound } from '../../lib/audio';
 import { vibrate } from '../../lib/haptics';
@@ -195,9 +197,9 @@ export function QuizGame() {
                 : 'Sleduj animovaný řez a urči mechanismus i jeho hlavní slabinu.'}
             </p>
             <ul className="mt-3 space-y-1 text-xs text-slate-400">
-              <li>⏱️ {LIMIT} s na otázku · {ROUND} otázek</li>
-              <li>⚡ Body = 100 + bonus za rychlost</li>
-              <li>🔥 Série správných odpovědí = násobič až ×3</li>
+              <li className="flex items-center gap-2"><Icon name="timer" size={14} /> {LIMIT} s na otázku · {ROUND} otázek</li>
+              <li className="flex items-center gap-2"><Icon name="zap" size={14} /> Body = 100 + bonus za rychlost</li>
+              <li className="flex items-center gap-2"><Icon name="flame" size={14} /> Série správných odpovědí = násobič až ×3</li>
             </ul>
             <Button variant="brass" size="lg" className="mt-4 w-full" onClick={start} icon="play">
               Spustit kvíz
@@ -207,7 +209,7 @@ export function QuizGame() {
         {history.length > 0 && (
           <>
             <SectionTitle>Osobní žebříček</SectionTitle>
-            <Card className="divide-y divide-white/[0.06]">
+            <Card className="divide-y divide-sep">
               {history.slice(0, 5).map((h, i) => (
                 <div key={h.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
                   <span className={`w-6 font-mono font-bold ${i === 0 ? 'text-brass-400' : 'text-slate-500'}`}>#{i + 1}</span>
@@ -230,20 +232,20 @@ export function QuizGame() {
     const pct = correct / round.length;
     return (
       <Card className="p-6 text-center">
-        <motion.div initial={{ scale: 0.5, rotate: -10 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 260, damping: 12 }} className="text-6xl">
-          {pct === 1 ? '🏆' : pct >= 0.8 ? '🥇' : pct >= 0.5 ? '🥈' : '📚'}
+        <motion.div initial={{ scale: 0.5, rotate: -10 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 260, damping: 12 }} className="flex justify-center">
+          <IconTile icon={pct >= 0.8 ? 'trophy' : pct >= 0.5 ? 'medal' : 'book'} color={pct >= 0.8 ? IOS.orange : pct >= 0.5 ? IOS.gray : IOS.blue} size={72} />
         </motion.div>
-        <div className="mt-3 font-mono text-4xl font-bold brass-text">{score}</div>
+        <div className="mt-3 font-mono text-4xl font-bold text-brass-500">{score}</div>
         <div className="text-sm text-slate-400">bodů</div>
         {score >= best && <div className="mt-2 text-sm font-semibold text-emerald-300">Nový osobní rekord!</div>}
         <div className="mt-4 grid grid-cols-2 gap-3">
-          <div className="rounded-xl bg-black/25 p-3">
+          <div className="rounded-xl bg-well p-3">
             <div className="font-mono text-xl">
               {correct}/{round.length}
             </div>
             <div className="text-xs text-slate-500">správně</div>
           </div>
-          <div className="rounded-xl bg-black/25 p-3">
+          <div className="rounded-xl bg-well p-3">
             <div className="font-mono text-xl">{bestStreak}</div>
             <div className="text-xs text-slate-500">nejdelší série</div>
           </div>
@@ -269,13 +271,13 @@ export function QuizGame() {
         <span className="flex items-center gap-3">
           {streak > 1 && (
             <motion.span key={streak} initial={{ scale: 1.5 }} animate={{ scale: 1 }} className="rounded-full bg-orange-500/20 px-2 py-0.5 text-xs font-semibold text-orange-300">
-              🔥 ×{(1 + Math.min(streak, 8) * 0.25).toFixed(2)}
+              <Icon name="flame" size={12} className="inline" /> ×{(1 + Math.min(streak, 8) * 0.25).toFixed(2)}
             </motion.span>
           )}
           <span className="font-mono font-semibold text-brass-300">{score} b</span>
         </span>
       </div>
-      <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-black/25">
+      <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-well">
         <div
           className="h-full rounded-full transition-[width] duration-75"
           style={{ width: `${(timeLeft / LIMIT) * 100}%`, background: timeLeft < 3 ? '#ef4444' : timeLeft < 6 ? '#f59e0b' : '#10b981' }}
@@ -312,8 +314,8 @@ export function QuizGame() {
                           : state === 'wrong'
                             ? 'border-bad bg-bad/15 text-red-200'
                             : state === 'dim'
-                              ? 'border-white/[0.06] text-slate-500'
-                              : 'border-white/10 bg-ink-950/60 text-slate-200 hover:border-brass-500 active:scale-[0.99]'
+                              ? 'border-sep text-slate-500'
+                              : 'border-sep bg-ink-950/60 text-slate-200 hover:border-brass-500 active:scale-[0.99]'
                       }`}
                     >
                       {o}
@@ -323,7 +325,7 @@ export function QuizGame() {
               </div>
               {picked !== null && (
                 <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-3">
-                  <p className="rounded-xl bg-black/25 p-3 text-xs leading-relaxed text-slate-300">
+                  <p className="rounded-xl bg-well p-3 text-xs leading-relaxed text-slate-300">
                     {picked === '__timeout__' && <b className="text-red-300">Čas vypršel. </b>}
                     {q!.explain}
                   </p>

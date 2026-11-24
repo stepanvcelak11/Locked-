@@ -1,26 +1,28 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store/AppStore';
-import { Icon, type IconName } from './Icon';
+import { Icon, isIconName, type IconName } from './Icon';
 import type { TabId } from '../types';
-import { Button, Segmented, Sheet, Toggle } from './ui';
+import { Button, GroupLabel, IconTile, ListGroup, ListRow, Segmented, Sheet, Switch } from './ui';
+import { IOS } from '../lib/colors';
 import { exportFile, importFile, solvesToCsv } from '../lib/storage';
 import { sound } from '../lib/audio';
 import { ETHICS } from '../data/library';
 
-const NAV: { id: TabId; label: string; icon: IconName; color: string }[] = [
-  { id: 'timer', label: 'Stopky', icon: 'timer', color: '#ffb547' },
-  { id: 'arcade', label: 'Simulátor', icon: 'gamepad', color: '#b69cff' },
-  { id: 'library', label: 'Encyklopedie', icon: 'book', color: '#4fd8c4' },
-  { id: 'gear', label: 'Výbava', icon: 'toolbox', color: '#ff8a6b' },
-  { id: 'stats', label: 'Statistiky', icon: 'chart', color: '#7cc4ff' },
+const NAV: { id: TabId; label: string; icon: IconName }[] = [
+  { id: 'timer', label: 'Stopky', icon: 'timer' },
+  { id: 'arcade', label: 'Trénink', icon: 'gamepad' },
+  { id: 'library', label: 'Encyklopedie', icon: 'book' },
+  { id: 'gear', label: 'Výbava', icon: 'toolbox' },
+  { id: 'stats', label: 'Statistiky', icon: 'chart' },
 ];
 
+/** iOS tab bar: translucent, hairline on top, tint for the active tab. */
 export function BottomNav() {
   const { tab, navigate } = useStore();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.06] bg-ink-900/85 pb-[var(--safe-bottom)] backdrop-blur-xl">
-      <div className="mx-auto flex max-w-2xl px-1">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-sep bg-bar pb-[var(--safe-bottom)] backdrop-blur-xl backdrop-saturate-150">
+      <div className="mx-auto flex max-w-2xl">
         {NAV.map((n) => {
           const active = tab === n.id;
           return (
@@ -30,21 +32,12 @@ export function BottomNav() {
                 sound.unlock();
                 navigate(n.id);
               }}
-              className={`relative flex flex-1 flex-col items-center gap-1 pb-2 pt-2 text-[11px] font-bold transition ${active ? '' : 'text-slate-500 hover:text-slate-300'}`}
-              style={active ? { color: n.color } : undefined}
+              className={`flex flex-1 flex-col items-center gap-0.5 pb-1.5 pt-2 text-[10px] font-medium transition-colors ${active ? 'text-brass-500' : 'text-slate-500'}`}
               aria-current={active ? 'page' : undefined}
             >
-              <span className="relative flex h-8 w-14 items-center justify-center">
-                {active && (
-                  <motion.span
-                    layoutId="nav-pill"
-                    className="absolute inset-0 rounded-full"
-                    style={{ background: `${n.color}26` }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                  />
-                )}
-                <Icon name={n.icon} size={21} strokeWidth={active ? 2.3 : 2} className="relative" />
-              </span>
+              <motion.span animate={{ scale: active ? 1.06 : 1 }} transition={{ type: 'spring', stiffness: 500, damping: 30 }}>
+                <Icon name={n.icon} size={25} strokeWidth={active ? 2.3 : 1.9} />
+              </motion.span>
               {n.label}
             </button>
           );
@@ -54,7 +47,6 @@ export function BottomNav() {
   );
 }
 
-/** Brand mark: padlock with a pin-tumbler cut-away (matches the app icon). */
 export function LogoMark({ size = 28 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="96 64 320 384" aria-hidden="true">
@@ -64,7 +56,7 @@ export function LogoMark({ size = 28 }: { size?: number }) {
           <stop offset="1" stopColor="#f0962c" />
         </linearGradient>
       </defs>
-      <path d="M180 236V172a76 76 0 0 1 152 0v64" fill="none" stroke="#e4ddee" strokeWidth="34" />
+      <path d="M180 236V172a76 76 0 0 1 152 0v64" fill="none" stroke="#a1a1a6" strokeWidth="34" />
       <rect x="118" y="226" width="276" height="202" rx="40" fill="url(#lm-g)" />
       <g fill="#1b1528">
         {[
@@ -83,18 +75,34 @@ export function LogoMark({ size = 28 }: { size?: number }) {
   );
 }
 
+const TITLES: Record<TabId, string> = { timer: 'Stopky', arcade: 'Trénink', library: 'Encyklopedie', gear: 'Výbava', stats: 'Statistiky' };
+
+/** iOS navigation bar: transparent over the large title, blurred with a compact title once scrolled. */
 export function TopBar() {
+  const { tab } = useStore();
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
   return (
     <>
-      <header className="sticky top-0 z-30 bg-ink-950/70 pt-[var(--safe-top)] backdrop-blur-xl">
-        <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4">
-          <div className="flex items-center gap-2.5">
-            <LogoMark size={24} />
-            <span className="font-display text-[1.3rem] font-semibold text-slate-50">Locked</span>
-          </div>
-          <button onClick={() => setOpen(true)} className="rounded-full bg-white/[0.05] p-2 text-slate-400 hover:bg-white/10 hover:text-white" aria-label="Nastavení">
-            <Icon name="settings" />
+      <header
+        className={`sticky top-0 z-30 pt-[var(--safe-top)] transition-colors duration-200 ${scrolled ? 'border-b border-sep bg-bar backdrop-blur-xl backdrop-saturate-150' : 'border-b border-transparent'}`}
+      >
+        <div className="relative mx-auto flex h-11 max-w-2xl items-center justify-end px-2">
+          <motion.span
+            className="pointer-events-none absolute inset-x-16 text-center text-[17px] font-semibold text-slate-50"
+            animate={{ opacity: scrolled ? 1 : 0, y: scrolled ? 0 : 4 }}
+            transition={{ duration: 0.15 }}
+          >
+            {TITLES[tab]}
+          </motion.span>
+          <button onClick={() => setOpen(true)} className="flex h-11 w-11 items-center justify-center rounded-full text-brass-500 active:opacity-50" aria-label="Nastavení">
+            <Icon name="settings" size={23} />
           </button>
         </div>
       </header>
@@ -122,75 +130,99 @@ function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }
 
   return (
     <Sheet open={open} onClose={onClose} title="Nastavení">
-      <h3 className="mb-1 text-xs font-semibold text-steel-400">Zvuk a odezva</h3>
-      <Toggle checked={s.sound} onChange={(v) => updateSettings({ sound: v })} label="Zvukové efekty" desc="Syntetizované klikání stavítek, stopky" />
-      {s.sound && (
-        <div className="flex items-center gap-3 py-2">
-          <Icon name="volume" size={18} className="text-steel-400" />
-          <input type="range" className="slider flex-1" min={0} max={1} step={0.05} value={s.volume} onChange={(e) => updateSettings({ volume: +e.target.value })} />
-          <button className="text-xs text-brass-400" onClick={() => sound.pinSet()}>
-            test
-          </button>
-        </div>
-      )}
-      <Toggle checked={s.haptics} onChange={(v) => updateSettings({ haptics: v })} label="Vibrace" desc="Hmatová odezva na podporovaných zařízeních" />
-
-      <h3 className="mb-1 mt-5 text-xs font-semibold text-steel-400">Stopky</h3>
-      <div className="py-2">
-        <div className="mb-1 flex justify-between text-sm">
-          <span>Doba podržení pro start</span>
-          <span className="font-mono text-brass-300">{(s.holdToStartMs / 1000).toFixed(2)} s</span>
-        </div>
-        <input type="range" className="slider w-full" min={0} max={1500} step={50} value={s.holdToStartMs} onChange={(e) => updateSettings({ holdToStartMs: +e.target.value })} />
-      </div>
-      <Toggle checked={s.requireTwoFingers} onChange={(v) => updateSettings({ requireTwoFingers: v })} label="Vyžadovat 2 prsty" desc="Stackmat styl – start až po položení dvou prstů" />
-      <div className="py-2">
-        <div className="mb-1.5 text-sm">Prohlídka zámku (inspection)</div>
+      <GroupLabel>Vzhled</GroupLabel>
+      <ListGroup className="p-3">
         <Segmented
-          value={String(s.inspectionSec)}
-          onChange={(v) => updateSettings({ inspectionSec: +v })}
+          value={s.theme}
+          onChange={(v) => updateSettings({ theme: v })}
           options={[
-            { id: '0', label: 'Vyp' },
-            { id: '5', label: '5 s' },
-            { id: '10', label: '10 s' },
-            { id: '15', label: '15 s' },
+            { id: 'light', label: 'Světlý' },
+            { id: 'dark', label: 'Tmavý' },
+            { id: 'system', label: 'Podle systému' },
           ]}
-          size="sm"
         />
-      </div>
-      <Toggle checked={s.hideTimeWhileRunning} onChange={(v) => updateSettings({ hideTimeWhileRunning: v })} label="Skrýt čas během měření" desc="Menší stres, lepší soustředění" />
+      </ListGroup>
 
-      <h3 className="mb-1 mt-5 text-xs font-semibold text-steel-400">Simulátor</h3>
-      <div className="py-2">
-        <div className="mb-1.5 text-sm">Obtížnost fyziky</div>
-        <Segmented
-          value={s.simDifficulty}
-          onChange={(v) => updateSettings({ simDifficulty: v })}
-          options={[
-            { id: 'easy', label: 'Lehká' },
-            { id: 'normal', label: 'Normální' },
-            { id: 'hard', label: 'Těžká' },
-          ]}
-          size="sm"
-        />
-      </div>
-      <Toggle checked={s.showBindingHint} onChange={(v) => updateSettings({ showBindingHint: v })} label="Zvýraznit binding pin" desc="V průhledném módu žhne komora, která právě tuhne" />
+      <GroupLabel>Zvuk a odezva</GroupLabel>
+      <ListGroup>
+        <ListRow icon="volume" color={IOS.pink} title="Zvukové efekty" sub="Klikání stavítek, stopky">
+          <Switch checked={s.sound} onChange={(v) => updateSettings({ sound: v })} label="Zvukové efekty" />
+        </ListRow>
+        {s.sound && (
+          <div className="relative flex items-center gap-3 px-4 py-3">
+            <Icon name="mute" size={16} className="text-slate-500" />
+            <input type="range" aria-label="Hlasitost" className="slider flex-1" min={0} max={1} step={0.05} value={s.volume} onChange={(e) => updateSettings({ volume: +e.target.value })} />
+            <Icon name="volume" size={18} className="text-slate-500" />
+            <button className="text-[15px] text-brass-500" onClick={() => sound.pinSet()}>
+              Test
+            </button>
+            <span className="absolute bottom-0 left-4 right-0 h-px bg-sep" />
+          </div>
+        )}
+        <ListRow icon="zap" color={IOS.orange} title="Vibrace" sub="Hmatová odezva" last>
+          <Switch checked={s.haptics} onChange={(v) => updateSettings({ haptics: v })} label="Vibrace" />
+        </ListRow>
+      </ListGroup>
 
-      <h3 className="mb-2 mt-5 text-xs font-semibold text-steel-400">Data a záloha</h3>
-      <p className="mb-3 text-xs text-slate-400">
-        Vše je uloženo pouze v tomto zařízení (offline). Zálohu si stáhni jako .json a nahraj ji na jiném zařízení.
-      </p>
-      <div className="grid grid-cols-2 gap-2">
-        <Button icon="download" onClick={() => exportFile(data)}>
-          Export .json
-        </Button>
-        <Button icon="upload" onClick={() => fileRef.current?.click()}>
-          Import .json
-        </Button>
-        <Button icon="list" variant="outline" onClick={downloadCsv} className="col-span-2">
-          Export časů do CSV
-        </Button>
-      </div>
+      <GroupLabel>Stopky</GroupLabel>
+      <ListGroup>
+        <div className="relative px-4 py-3">
+          <div className="mb-2 flex justify-between text-[16px] text-slate-50">
+            <span>Podržení pro start</span>
+            <span className="font-mono text-slate-400">{(s.holdToStartMs / 1000).toFixed(2)} s</span>
+          </div>
+          <input type="range" aria-label="Doba podržení" className="slider w-full" min={0} max={1500} step={50} value={s.holdToStartMs} onChange={(e) => updateSettings({ holdToStartMs: +e.target.value })} />
+          <span className="absolute bottom-0 left-4 right-0 h-px bg-sep" />
+        </div>
+        <ListRow title="Vyžadovat 2 prsty" sub="Start až po položení dvou prstů">
+          <Switch checked={s.requireTwoFingers} onChange={(v) => updateSettings({ requireTwoFingers: v })} label="Vyžadovat 2 prsty" />
+        </ListRow>
+        <div className="relative px-4 py-3">
+          <div className="mb-2 text-[16px] text-slate-50">Prohlídka zámku před startem</div>
+          <Segmented
+            value={String(s.inspectionSec)}
+            onChange={(v) => updateSettings({ inspectionSec: +v })}
+            options={[
+              { id: '0', label: 'Vyp' },
+              { id: '5', label: '5 s' },
+              { id: '10', label: '10 s' },
+              { id: '15', label: '15 s' },
+            ]}
+          />
+          <span className="absolute bottom-0 left-4 right-0 h-px bg-sep" />
+        </div>
+        <ListRow title="Skrýt čas během měření" sub="Menší stres, lepší soustředění" last>
+          <Switch checked={s.hideTimeWhileRunning} onChange={(v) => updateSettings({ hideTimeWhileRunning: v })} label="Skrýt čas" />
+        </ListRow>
+      </ListGroup>
+
+      <GroupLabel>Simulátor</GroupLabel>
+      <ListGroup>
+        <div className="relative px-4 py-3">
+          <div className="mb-2 text-[16px] text-slate-50">Obtížnost fyziky</div>
+          <Segmented
+            value={s.simDifficulty}
+            onChange={(v) => updateSettings({ simDifficulty: v })}
+            options={[
+              { id: 'easy', label: 'Lehká' },
+              { id: 'normal', label: 'Normální' },
+              { id: 'hard', label: 'Těžká' },
+            ]}
+          />
+          <span className="absolute bottom-0 left-4 right-0 h-px bg-sep" />
+        </div>
+        <ListRow title="Zvýraznit binding pin" sub="V průhledném režimu" last>
+          <Switch checked={s.showBindingHint} onChange={(v) => updateSettings({ showBindingHint: v })} label="Zvýraznit binding pin" />
+        </ListRow>
+      </ListGroup>
+
+      <GroupLabel>Data a záloha</GroupLabel>
+      <ListGroup>
+        <ListRow icon="download" color={IOS.blue} title="Exportovat zálohu" sub=".json – přenos na jiné zařízení" onClick={() => exportFile(data)} />
+        <ListRow icon="upload" color={IOS.green} title="Nahrát zálohu" onClick={() => fileRef.current?.click()} />
+        <ListRow icon="list" color={IOS.gray} title="Exportovat časy do CSV" onClick={downloadCsv} last />
+      </ListGroup>
+      <p className="mt-1.5 px-4 text-[13px] text-slate-400">Vše je uloženo jen v tomto zařízení a funguje offline.</p>
       <input
         ref={fileRef}
         type="file"
@@ -203,23 +235,20 @@ function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }
           try {
             const d = await importFile(f);
             replaceData({ ...d, ethicsAccepted: true });
-            toast({ icon: '✅', title: 'Záloha nahrána', body: `${d.locks.length} zámků, ${d.tools.length} nástrojů, ${d.solves.length} časů`, tone: 'ok' });
+            toast({ icon: 'check', title: 'Záloha nahrána', body: `${d.locks.length} zámků, ${d.tools.length} nástrojů, ${d.solves.length} časů`, tone: 'ok' });
           } catch (err) {
-            toast({ icon: '⚠️', title: 'Import selhal', body: (err as Error).message, tone: 'bad' });
+            toast({ icon: 'info', title: 'Import selhal', body: (err as Error).message, tone: 'bad' });
           }
         }}
       />
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <Button variant="danger" size="sm" onClick={() => setConfirmReset('empty')}>
-          Smazat vše
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => setConfirmReset('samples')}>
-          Vyzkoušet ukázková data
-        </Button>
-      </div>
+
+      <ListGroup className="mt-6">
+        <ListRow title={<span className="text-brass-500">Vyzkoušet ukázková data</span>} onClick={() => setConfirmReset('samples')} chevron={false} />
+        <ListRow title={<span className="text-red-300">Smazat všechna data</span>} onClick={() => setConfirmReset('empty')} chevron={false} last />
+      </ListGroup>
       {confirmReset && (
-        <div className="mt-3 rounded-xl border border-bad/40 bg-bad/10 p-3 text-sm">
-          <p className="mb-2 text-red-200">
+        <div className="mt-3 rounded-xl bg-bad/10 p-3 text-[15px]">
+          <p className="mb-2 text-slate-100">
             {confirmReset === 'empty' ? 'Opravdu smazat všechna data? ' : 'Nahradit tvoje data vymyšlenou ukázkovou historií (časy, hry)? '}
             Tuto akci nelze vrátit – doporučujeme nejdřív export.
           </p>
@@ -230,7 +259,7 @@ function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }
               onClick={() => {
                 resetData(confirmReset === 'samples');
                 setConfirmReset(null);
-                toast({ icon: '🧹', title: 'Data obnovena' });
+                toast({ icon: 'refresh', title: 'Data obnovena' });
               }}
             >
               Ano, potvrdit
@@ -242,20 +271,20 @@ function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }
         </div>
       )}
 
-      <h3 className="mb-2 mt-5 text-xs font-semibold text-steel-400">O aplikaci</h3>
-      <Button variant="outline" icon="shield" className="w-full" onClick={() => setShowEthics((v) => !v)}>
-        Zlatá pravidla locksportu
-      </Button>
+      <GroupLabel>O aplikaci</GroupLabel>
+      <ListGroup>
+        <ListRow icon="shield" color={IOS.indigo} title="Zlatá pravidla locksportu" onClick={() => setShowEthics((v) => !v)} chevron={false} last />
+      </ListGroup>
       {showEthics && (
-        <ul className="mt-3 space-y-2 text-sm text-slate-300">
+        <ul className="mt-2 space-y-2 text-[15px] text-slate-300">
           {ETHICS.filter((e) => e.golden).map((e) => (
-            <li key={e.title} className="rounded-xl bg-black/25 p-3">
-              <b className="text-brass-300">{e.title}.</b> {e.text}
+            <li key={e.title} className="card p-3">
+              <b className="text-slate-50">{e.title}.</b> {e.text}
             </li>
           ))}
         </ul>
       )}
-      <p className="mt-4 pb-2 text-center text-xs text-slate-500">Locked v1.0 · PWA · funguje offline</p>
+      <p className="mt-5 pb-2 text-center text-[13px] text-slate-500">Locked 1.1 · funguje offline</p>
     </Sheet>
   );
 }
@@ -267,41 +296,41 @@ export function EthicsGate() {
   return (
     <AnimatePresence>
       {!data.ethicsAccepted && (
-        <motion.div className="fixed inset-0 z-[100] flex items-center justify-center bg-ink-950/95 p-4 backdrop-blur" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <motion.div
-            className="card w-full max-w-md p-6"
-            initial={{ y: 30, scale: 0.96 }}
-            animate={{ y: 0, scale: 1 }}
-            exit={{ y: -20, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 26 }}
-          >
-            <div className="mb-4 flex flex-col items-center text-center">
-              <LogoMark size={56} />
-              <h1 className="mt-3 font-display text-2xl font-semibold">Zlatá pravidla Locksportu</h1>
-              <p className="mt-1 text-sm text-slate-400">Locksport je sport a vzdělávání. Než začneš, potvrď prosím tato pravidla.</p>
+        <motion.div
+          className="fixed inset-0 z-[100] overflow-y-auto bg-ink-950 px-6 pb-[calc(1.5rem+var(--safe-bottom))] pt-[calc(3rem+var(--safe-top))]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, y: 40 }}
+        >
+          <div className="mx-auto flex min-h-full max-w-md flex-col">
+            <div className="flex flex-col items-center text-center">
+              <img src="./icons/icon-192.png" alt="" width={84} height={84} className="rounded-[20px] shadow-[0_10px_30px_-12px_rgba(0,0,0,0.5)]" />
+              <h1 className="mt-5 font-display text-[30px] font-bold leading-tight text-slate-50">Vítej v Locked</h1>
+              <p className="mt-2 text-[16px] text-slate-400">Locksport je sport a vzdělávání. Než začneš, potvrď prosím dvě zlatá pravidla.</p>
             </div>
-            <ol className="space-y-3">
-              {golden.map((r, i) => (
-                <li key={r.title} className="flex gap-3 rounded-2xl border border-brass-500/30 bg-brass-500/5 p-3.5">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brass-500 text-sm font-bold text-ink-950">{i + 1}</span>
+            <ul className="mt-8 space-y-6">
+              {golden.map((r) => (
+                <li key={r.title} className="flex gap-4">
+                  <IconTile icon={r.icon} color={r.color} size={44} />
                   <div>
-                    <div className="font-semibold text-brass-300">{r.title}</div>
-                    <p className="mt-0.5 text-sm leading-relaxed text-slate-300">{r.text}</p>
+                    <div className="text-[17px] font-semibold text-slate-50">{r.title}</div>
+                    <p className="mt-0.5 text-[15px] leading-snug text-slate-400">{r.text}</p>
                   </div>
                 </li>
               ))}
-            </ol>
-            <p className="mt-3 text-xs text-slate-500">Celý etický kodex a přehled zákonů najdeš v Encyklopedii → Zákony & Etika.</p>
-            <button type="button" onClick={() => setChecked((v) => !v)} className="mt-4 flex w-full items-center gap-3 rounded-xl bg-black/25 p-3 text-left text-sm">
-              <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${checked ? 'border-brass-500 bg-brass-500 text-ink-950' : 'border-white/10'}`}>
-                {checked && <Icon name="check" size={14} strokeWidth={3} />}
+            </ul>
+            <div className="flex-1" />
+            <p className="mt-6 text-center text-[13px] text-slate-500">Celý etický kodex a přehled zákonů najdeš v Encyklopedii.</p>
+            <button type="button" onClick={() => setChecked((v) => !v)} className="card mt-3 flex w-full items-center gap-3 p-3.5 text-left text-[15px] text-slate-100">
+              <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition ${checked ? 'border-brass-500 bg-brass-500 text-white' : 'border-slate-600'}`}>
+                {checked && <Icon name="check" size={14} strokeWidth={3.2} />}
               </span>
               Budu otevírat pouze zámky, které vlastním a které nejsou v provozu.
             </button>
             <Button
               variant="brass"
               size="lg"
-              className="mt-4 w-full"
+              className="mt-3 w-full"
               disabled={!checked}
               onClick={() => {
                 sound.unlock();
@@ -311,42 +340,38 @@ export function EthicsGate() {
             >
               Rozumím a souhlasím
             </Button>
-          </motion.div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
   );
 }
 
+/** iOS notification-style banners. */
 export function Toasts() {
   const { toasts, dismissToast } = useStore();
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-[calc(3.5rem+var(--safe-top))] z-[90] flex flex-col items-center gap-2 px-4">
+    <div className="pointer-events-none fixed inset-x-0 top-[calc(0.5rem+var(--safe-top))] z-[90] flex flex-col items-center gap-2 px-3">
       <AnimatePresence>
         {toasts.map((t) => (
           <motion.button
             key={t.id}
             layout
-            initial={{ y: -20, opacity: 0, scale: 0.9 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: -10, opacity: 0, scale: 0.95 }}
+            initial={{ y: -40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -30, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 32 }}
             onClick={() => dismissToast(t.id)}
-            className={`pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-2xl border px-4 py-3 text-left shadow-2xl backdrop-blur-xl ${
-              t.tone === 'bad'
-                ? 'border-bad/50 bg-red-950/80'
-                : t.tone === 'ok'
-                  ? 'border-ok/50 bg-emerald-950/80'
-                  : t.tone === 'steel'
-                    ? 'border-azure-400/40 bg-slate-900/90'
-                    : 'border-brass-500/50 bg-ink-900/90'
-            }`}
+            className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-[22px] bg-bar px-4 py-3 text-left shadow-[0_10px_40px_-10px_rgba(0,0,0,0.35)] backdrop-blur-xl backdrop-saturate-150"
           >
-            <motion.span className="text-2xl" initial={{ rotate: -30, scale: 0.4 }} animate={{ rotate: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 12 }}>
-              {t.icon}
-            </motion.span>
-            <span>
-              <span className="block text-sm font-semibold text-slate-50">{t.title}</span>
-              {t.body && <span className="block text-xs text-slate-300">{t.body}</span>}
+            {isIconName(t.icon) ? (
+              <IconTile icon={t.icon} color={t.tone === 'bad' ? IOS.red : t.tone === 'ok' ? IOS.green : t.tone === 'brass' ? IOS.orange : IOS.blue} size={36} />
+            ) : (
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-fill text-xl">{t.icon}</span>
+            )}
+            <span className="min-w-0">
+              <span className="block text-[15px] font-semibold text-slate-50">{t.title}</span>
+              {t.body && <span className="block text-[13px] text-slate-400">{t.body}</span>}
             </span>
           </motion.button>
         ))}

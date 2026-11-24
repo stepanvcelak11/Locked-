@@ -1,8 +1,9 @@
+import { IOS } from '../../lib/colors';
 import { useEffect, useMemo, useState } from 'react';
 import { LockSimulator, type SimOpenResult } from './LockSimulator';
 import { randomSpec, type ToolKind } from './engine';
 import { useStore } from '../../store/AppStore';
-import { Button, Chip, Segmented } from '../../components/ui';
+import { Button, Chip, Segmented, IconTile } from '../../components/ui';
 import { Icon } from '../../components/Icon';
 import type { LockItem, SimLockSpec } from '../../types';
 import { DRILLS } from '../../data/drills';
@@ -84,7 +85,7 @@ export function SimulatorPanel() {
         completeDrill(drill.id);
         toast({ icon: drill.icon, title: `Dril splněn: ${drill.title}`, body: `+${drill.xp} XP`, tone: 'ok' });
       } else {
-        toast({ icon: '⏱️', title: 'Podmínka drilu nesplněna', body: 'Zkus to znovu – nový zámek je připraven.', tone: 'steel' });
+        toast({ icon: 'timer', title: 'Podmínka drilu nesplněna', body: 'Zkus to znovu – nový zámek je připraven.', tone: 'steel' });
       }
     }
   };
@@ -97,10 +98,10 @@ export function SimulatorPanel() {
   return (
     <div>
       {drill && (
-        <div className="card mb-3 flex items-center gap-3 border-brass-500/50 p-3">
-          <span className="text-2xl">{drill.icon}</span>
+        <div className="card mb-3 flex items-center gap-3 p-3">
+          <IconTile icon={drill.icon} color={IOS.blue} size={36} />
           <div className="flex-1">
-            <div className="text-sm font-semibold text-brass-300">Dril: {drill.title}</div>
+            <div className="text-[15px] font-semibold text-slate-50">Dril: {drill.title}</div>
             <div className="text-xs text-slate-400">{drill.description}</div>
           </div>
           <button className="text-steel-400" onClick={() => setDrillId(undefined)} aria-label="Zrušit dril">
@@ -136,7 +137,7 @@ export function SimulatorPanel() {
           )}
         </div>
         {custom ? (
-          <div className="rounded-xl bg-black/25 p-3 text-sm">
+          <div className="rounded-xl bg-well p-3 text-sm">
             <div className="font-semibold text-slate-100">{custom.label ?? 'Vlastní zámek'}</div>
             <div className="mt-1 text-xs text-slate-400">
               {custom.pins} stavítek · {custom.pinTypes.filter((t) => t === 'spool').length}× spool · {custom.pinTypes.filter((t) => t === 'serrated').length}× serrated
@@ -155,7 +156,7 @@ export function SimulatorPanel() {
           </>
         )}
         <div className="mt-3">
-          <button className="flex w-full items-center justify-between rounded-xl border border-white/10 px-3 py-2 text-sm text-slate-300" onClick={() => setShowVault((v) => !v)}>
+          <button className="flex w-full items-center justify-between rounded-xl border border-sep px-3 py-2 text-sm text-slate-300" onClick={() => setShowVault((v) => !v)}>
             <span className="inline-flex items-center gap-2">
               <Icon name="lock" size={16} /> Simulovat zámek z mé sbírky
             </span>
@@ -188,16 +189,16 @@ export function SimulatorPanel() {
 
 function Counter({ label, value, max, onChange, color }: { label: string; value: number; max: number; onChange: (v: number) => void; color: string }) {
   return (
-    <div className="rounded-xl bg-black/25 p-2.5">
+    <div className="rounded-xl bg-well p-2.5">
       <div className="mb-1 text-xs text-slate-400">{label}</div>
       <div className="flex items-center justify-between">
-        <button className="h-8 w-8 rounded-lg border border-white/10 text-lg leading-none text-slate-300 disabled:opacity-30" disabled={value <= 0} onClick={() => onChange(value - 1)}>
+        <button className="h-8 w-8 rounded-lg border border-sep text-lg leading-none text-slate-300 disabled:opacity-30" disabled={value <= 0} onClick={() => onChange(value - 1)}>
           −
         </button>
         <span className="font-mono text-lg font-semibold" style={{ color }}>
           {value}
         </span>
-        <button className="h-8 w-8 rounded-lg border border-white/10 text-lg leading-none text-slate-300 disabled:opacity-30" disabled={value >= max} onClick={() => onChange(value + 1)}>
+        <button className="h-8 w-8 rounded-lg border border-sep text-lg leading-none text-slate-300 disabled:opacity-30" disabled={value >= max} onClick={() => onChange(value + 1)}>
           +
         </button>
       </div>

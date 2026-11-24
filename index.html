@@ -1,18 +1,25 @@
 <!doctype html>
-<html lang="cs">
+<html lang="cs" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#1a1628" />
+    <meta name="theme-color" content="#f2f2f7" />
     <meta name="description" content="Locked – vše-v-jednom aplikace pro locksport: realistický simulátor zámků, speed-picking stopky, hry, encyklopedie a statistiky. Funguje offline." />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Locked" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" type="image/svg+xml" href="./icons/icon.svg" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <title>Locked · Locksport Lab</title>
+    <script>
+      // apply the saved appearance before first paint (no flash)
+      try {
+        var t = JSON.parse(localStorage.getItem('locked.data.v1') || '{}').settings.theme;
+        if (t) document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

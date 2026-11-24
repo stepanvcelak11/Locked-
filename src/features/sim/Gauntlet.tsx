@@ -106,10 +106,10 @@ export function rankFor(time: number, par: number): Rank {
 }
 
 const RANK_STYLE: Record<Rank, string> = {
-  S: 'from-brass-300 via-brass-500 to-amber-700 text-ink-950',
-  A: 'from-emerald-300 to-emerald-600 text-ink-950',
-  B: 'from-sky-300 to-sky-600 text-ink-950',
-  C: 'from-slate-300 to-slate-600 text-ink-950',
+  S: 'from-brass-300 via-brass-500 to-amber-700 text-white',
+  A: 'from-emerald-300 to-emerald-600 text-white',
+  B: 'from-sky-300 to-sky-600 text-white',
+  C: 'from-slate-300 to-slate-600 text-white',
 };
 
 type Phase = 'setup' | 'countdown' | 'running' | 'done';
@@ -235,7 +235,7 @@ export function Gauntlet() {
   if (phase === 'running' && !virtual) {
     const current = splits.length;
     return (
-      <div className="no-select fixed inset-0 z-50 flex flex-col bg-black/25" onPointerDown={() => split()}>
+      <div className="no-select fixed inset-0 z-50 flex flex-col bg-well" onPointerDown={() => split()}>
         <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] text-sm text-slate-400">
           <span>
             Zámek <b className="text-slate-100">{current + 1}</b>/3
@@ -258,7 +258,7 @@ export function Gauntlet() {
               const ref = pbSplit(i);
               const delta = ref !== undefined ? s - ref : null;
               return (
-                <div key={i} className="flex justify-between rounded-xl bg-white/[0.07] px-4 py-2 font-mono text-sm">
+                <div key={i} className="flex justify-between rounded-xl bg-fill px-4 py-2 font-mono text-sm">
                   <span className="text-slate-400">Split {i + 1}</span>
                   <span>
                     {formatTime(s)}
@@ -280,8 +280,8 @@ export function Gauntlet() {
         value={virtual ? 'virtual' : 'real'}
         onChange={(v) => setVirtual(v === 'virtual')}
         options={[
-          { id: 'real', label: '🔒 Reálné zámky' },
-          { id: 'virtual', label: '🧪 Virtuální' },
+          { id: 'real', label: 'Reálné zámky' },
+          { id: 'virtual', label: 'Virtuální' },
         ]}
       />
       <div className="mt-3 grid grid-cols-2 gap-2">
@@ -289,7 +289,7 @@ export function Gauntlet() {
           <button
             key={x.id}
             onClick={() => setPreset(x.id)}
-            className={`rounded-2xl border p-3 text-left transition ${preset === x.id ? 'border-brass-500 bg-brass-500/10' : 'border-white/10 bg-white/[0.05]'}`}
+            className={`rounded-2xl border p-3 text-left transition ${preset === x.id ? 'border-brass-500 bg-brass-500/10' : 'border-sep bg-fill'}`}
           >
             <div className={`text-sm font-semibold ${preset === x.id ? 'text-brass-300' : 'text-slate-200'}`}>{x.label}</div>
             <div className="mt-0.5 text-[11px] text-slate-400">{x.desc}</div>
@@ -309,10 +309,10 @@ export function Gauntlet() {
           </Button>
           {slots && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-              <Card className="mt-3 divide-y divide-white/[0.06]">
+              <Card className="mt-3 divide-y divide-sep">
                 {slots.map((s, i) => (
                   <div key={i} className="flex items-center gap-3 px-4 py-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black/25 font-mono font-bold text-brass-400">{i + 1}</span>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-well font-mono font-bold text-brass-400">{i + 1}</span>
                     <div className="flex-1 text-sm text-slate-100">{s.label}</div>
                     <BeltBadge belt={s.belt} size="sm" />
                   </div>
@@ -388,7 +388,7 @@ export function Gauntlet() {
             <div className="mt-3 font-mono text-4xl font-bold text-slate-50">{formatTime(result.time)}</div>
             {pb && pb.id !== result.id && !result.dnf && (
               <div className={`text-sm ${result.time! <= pb.time! ? 'text-emerald-300' : 'text-slate-400'}`}>
-                {result.time! <= pb.time! ? '🎉 Nový osobní rekord!' : `PB ${formatTime(pb.time)} (+${formatTime(result.time! - pb.time!)})`}
+                {result.time! <= pb.time! ? 'Nový osobní rekord!' : `PB ${formatTime(pb.time)} (+${formatTime(result.time! - pb.time!)})`}
               </div>
             )}
             <div className="mt-4 space-y-1.5 text-left">
@@ -397,7 +397,7 @@ export function Gauntlet() {
                 const ref = pb && pb.id !== result.id ? pb.splits?.[i] : undefined;
                 const d = ref !== undefined ? s - ref : null;
                 return (
-                  <div key={i} className="flex items-center justify-between rounded-xl bg-black/25 px-3 py-2 font-mono text-sm">
+                  <div key={i} className="flex items-center justify-between rounded-xl bg-well px-3 py-2 font-mono text-sm">
                     <span className="text-slate-400">#{i + 1} {formatTime(seg)}</span>
                     <span>
                       {formatTime(s)}
@@ -416,7 +416,7 @@ export function Gauntlet() {
 
       <SectionTitle sub={`${p.label} · ${virtual ? 'virtuální' : 'reálné'} · hodnocení: S ≤ 50 % paru, A ≤ 75 %, B ≤ 100 %`}>Nejlepší pokusy</SectionTitle>
       {history.length ? (
-        <Card className="divide-y divide-white/[0.06]">
+        <Card className="divide-y divide-sep">
           {history.slice(0, 5).map((h, i) => (
             <div key={h.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
               <span className={`w-6 font-mono font-bold ${i === 0 ? 'text-brass-400' : 'text-slate-500'}`}>#{i + 1}</span>

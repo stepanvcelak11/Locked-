@@ -145,6 +145,7 @@ export interface Settings {
   hideTimeWhileRunning: boolean;
   simDifficulty: 'easy' | 'normal' | 'hard';
   showBindingHint: boolean;
+  theme: 'light' | 'dark' | 'system';
 }
 
 export interface TimerConfig {

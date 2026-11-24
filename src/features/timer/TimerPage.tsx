@@ -5,7 +5,8 @@ import { formatSolve, formatTime, formatDate, relativeDay } from '../../lib/form
 import { effectiveTime, summarize } from '../../lib/stats';
 import { sound } from '../../lib/audio';
 import { vibrate } from '../../lib/haptics';
-import { BeltBadge, Button, Card, SectionTitle, Segmented, Sheet } from '../../components/ui';
+import { BeltBadge, Button, Card, IconTile, ListGroup, PageHeader, SectionTitle, Segmented, SelectRow, Sheet } from '../../components/ui';
+import { IOS } from '../../lib/colors';
 import { Icon } from '../../components/Icon';
 import { TECHNIQUES, TOOL_PROFILES, thicknessLabel } from '../../data/labels';
 import type { Penalty, SolveRecord, Technique } from '../../types';
@@ -208,14 +209,6 @@ export function TimerPage() {
 
   const setPenalty = (s: SolveRecord, p: Penalty) => updateSolve(s.id, { penalty: s.penalty === p ? 'none' : p });
 
-  const padColor =
-    phase === 'ready'
-      ? 'border-ok bg-ok/15 shadow-[0_0_60px_-10px_rgba(16,185,129,0.6)]'
-      : phase === 'holding'
-        ? 'border-bad/70 bg-bad/10'
-        : phase === 'inspect'
-          ? 'border-brass-500 bg-brass-500/10'
-          : 'border-white/[0.07] bg-[radial-gradient(120%_90%_at_50%_0%,rgba(255,173,51,0.13),rgba(182,156,255,0.06)_45%,rgba(255,255,255,0.03)_80%)] shadow-[0_24px_50px_-30px_rgba(0,0,0,0.9)]';
   const digitColor = phase === 'ready' ? 'text-emerald-300' : phase === 'holding' ? 'text-red-300' : 'text-slate-50';
 
   const mainText = (() => {
@@ -229,62 +222,64 @@ export function TimerPage() {
   })();
 
   const recent = [...scoped].reverse().slice(0, 50);
+  // ring: last result relative to the record (full = new record); inspection counts down
+  const ringProgress = (() => {
+    if (phase === 'ready' || phase === 'holding') return 1;
+    if (phase === 'inspect') return Math.max(0, inspectLeft / Math.max(1, settings.inspectionSec * 1000));
+    if (last && stats.best != null && Number.isFinite(stats.best) && Number.isFinite(effectiveTime(last))) return Math.min(1, stats.best / effectiveTime(last));
+    return 0;
+  })();
 
   return (
     <div>
-      {/* Config */}
-      <Card className="p-3">
-        <div className="grid grid-cols-2 gap-2">
-          <label className="col-span-2">
-            <span className="mb-1 block text-xs font-semibold text-steel-400">Zámek</span>
-            <select className="field" value={cfg.lockId ?? ''} onChange={(e) => setTimerConfig({ lockId: e.target.value || null })}>
-              <option value="">— bez zámku —</option>
-              {data.locks.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.brand} {l.name} ({l.pins} pin)
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span className="mb-1 block text-xs font-semibold text-steel-400">Planžeta</span>
-            <select className="field text-sm" value={cfg.pickId ?? ''} onChange={(e) => setTimerConfig({ pickId: e.target.value || null })}>
-              <option value="">—</option>
-              {picks.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name} · {t.thickness}"
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span className="mb-1 block text-xs font-semibold text-steel-400">Napínák</span>
-            <select className="field text-sm" value={cfg.tensionId ?? ''} onChange={(e) => setTimerConfig({ tensionId: e.target.value || null })}>
-              <option value="">—</option>
-              {tensions.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name.includes(t.position) ? '' : `${t.position} `}
-                  {t.name} · {t.thickness}"
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <div className="mt-2">
-          <Segmented<Technique> size="sm" value={cfg.technique} onChange={(v) => setTimerConfig({ technique: v })} options={TECHNIQUES.map((t) => ({ id: t.id, label: t.label }))} />
-        </div>
-        {lock && (
-          <div className="mt-2 flex items-center gap-2 px-1 text-xs text-slate-400">
-            <BeltBadge belt={lock.belt} size="sm" />
-            <span>{lock.pinConfig.filter((p) => p.type !== 'standard' && p.type !== 'unknown').length} bezpečnostních pinů</span>
-            {lock.bindingOrder.length > 0 && <span className="font-mono text-slate-500">BO: {lock.bindingOrder.join('→')}</span>}
-          </div>
-        )}
-      </Card>
+      <PageHeader title="Stopky" />
 
-      {/* Stackmat pad */}
+      {/* Config – iOS grouped list */}
+      <ListGroup>
+        <SelectRow
+          icon="lock"
+          color={IOS.orange}
+          title="Zámek"
+          placeholder="bez zámku"
+          value={cfg.lockId ?? ''}
+          onChange={(v) => setTimerConfig({ lockId: v || null })}
+          options={data.locks.map((l) => ({ value: l.id, label: `${l.brand} ${l.name}` }))}
+        />
+        <SelectRow
+          icon="edit"
+          color={IOS.blue}
+          title="Planžeta"
+          value={cfg.pickId ?? ''}
+          onChange={(v) => setTimerConfig({ pickId: v || null })}
+          options={picks.map((t) => ({ value: t.id, label: `${t.name} · ${t.thickness}"` }))}
+        />
+        <SelectRow
+          icon="wrench"
+          color={IOS.green}
+          title="Napínák"
+          value={cfg.tensionId ?? ''}
+          onChange={(v) => setTimerConfig({ tensionId: v || null })}
+          options={tensions.map((t) => ({ value: t.id, label: `${t.name.includes(t.position) ? '' : `${t.position} `}${t.name} · ${t.thickness}"` }))}
+        />
+        <div className="px-4 py-2.5">
+          <Segmented<Technique> value={cfg.technique} onChange={(v) => setTimerConfig({ technique: v })} options={TECHNIQUES.map((t) => ({ id: t.id, label: t.label }))} />
+        </div>
+      </ListGroup>
+      {lock && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 px-4 text-[13px] text-slate-400">
+          <BeltBadge belt={lock.belt} size="sm" />
+          <span>
+            {lock.pins} pinů · {lock.pinConfig.filter((p) => p.type !== 'standard' && p.type !== 'unknown').length} bezpečnostních
+          </span>
+          {lock.bindingOrder.length > 0 && <span className="font-mono">pořadí {lock.bindingOrder.join("→")}</span>}
+        </div>
+      )}
+
+      {/* Stackmat pad with ring dial */}
       <div
-        className={`no-select touch-none relative mt-3 flex h-[42vh] min-h-[260px] cursor-pointer flex-col items-center justify-center rounded-[2.2rem] border-2 transition-colors duration-150 ${padColor}`}
+        className={`card no-select touch-none relative mt-4 flex h-[44vh] min-h-[300px] cursor-pointer flex-col items-center justify-center transition-colors duration-150 ${
+          phase === 'ready' ? 'bg-ok/10' : phase === 'holding' ? 'bg-bad/[0.07]' : ''
+        }`}
         onPointerDown={onPadDown}
         onPointerUp={onPadUp}
         onPointerCancel={onPadUp}
@@ -293,26 +288,41 @@ export function TimerPage() {
         }}
         onContextMenu={(e) => e.preventDefault()}
       >
-        <div className="absolute left-4 top-3 flex gap-2 text-xs font-semibold">
+        <div className="absolute left-3 top-3 flex gap-1.5 text-[12px] font-semibold">
           {settings.audioTrigger && (
             <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${mic.status === 'on' ? 'bg-ok/15 text-emerald-300' : 'bg-bad/15 text-red-300'}`}>
-              <Icon name="mic" size={11} /> {mic.status === 'on' ? 'mic' : mic.status}
+              <Icon name="mic" size={11} /> {mic.status === 'on' ? 'mikrofon' : mic.status}
             </span>
           )}
-          {settings.inspectionSec > 0 && <span className="rounded-full bg-brass-500/15 px-2 py-0.5 text-brass-300">insp {settings.inspectionSec}s</span>}
-          {required === 2 && <span className="rounded-full bg-azure-400/15 px-2 py-0.5 text-azure-400">2 prsty</span>}
+          {settings.inspectionSec > 0 && <span className="rounded-full bg-fill px-2 py-0.5 text-slate-300">prohlídka {settings.inspectionSec} s</span>}
+          {required === 2 && <span className="rounded-full bg-fill px-2 py-0.5 text-slate-300">2 prsty</span>}
         </div>
-        <motion.div key={phase === 'stopped' ? lastId : 'live'} initial={phase === 'stopped' ? { scale: 1.08 } : false} animate={{ scale: 1 }} className={`font-mono text-[19vw] font-extrabold leading-none tracking-tight sm:text-8xl ${digitColor}`}>
-          {mainText}
-        </motion.div>
-        <div className="mt-3 text-sm text-slate-400">
+        <TimerRing phase={phase} progress={ringProgress}>
+          <div className="text-[13px] font-semibold text-slate-400">
+            {phase === 'idle' && (last ? 'Poslední pokus' : 'Připraveno')}
+            {phase === 'inspect' && 'Prohlídka'}
+            {phase === 'holding' && 'Drž…'}
+            {phase === 'ready' && <span className="text-emerald-300">Pusť!</span>}
+            {phase === 'stopped' && 'Hotovo'}
+          </div>
+          <motion.div
+            key={phase === 'stopped' ? lastId : 'live'}
+            initial={phase === 'stopped' ? { scale: 1.08 } : false}
+            animate={{ scale: 1 }}
+            className={`font-mono font-semibold leading-none tracking-tight ${mainText.length > 6 ? 'text-[44px]' : 'text-[58px]'} ${digitColor}`}
+          >
+            {mainText}
+          </motion.div>
+          <div className="mt-1 h-5 text-[13px] font-semibold text-brass-500">{Number.isFinite(stats.best) ? `Rekord ${formatTime(stats.best)}` : ''}</div>
+        </TimerRing>
+        <div className="mt-4 text-[15px] text-slate-400">
           {phase === 'idle' && (settings.inspectionSec ? 'Klepni pro prohlídku · podrž pro start' : `Podrž ${required === 2 ? 'dvěma prsty' : 'prst'} a pusť pro start`)}
-          {phase === 'inspect' && 'Prohlídka – podrž a pusť pro start'}
-          {phase === 'holding' && 'Drž…'}
-          {phase === 'ready' && <span className="font-semibold text-emerald-300">PŘIPRAVENO – pusť!</span>}
+          {phase === 'inspect' && 'Podrž a pusť pro start'}
+          {phase === 'holding' && 'Drž, dokud se kruh nezazelená'}
+          {phase === 'ready' && 'Pusť pro start'}
           {phase === 'stopped' && 'Podrž znovu pro další pokus'}
         </div>
-        <div className="absolute bottom-3 hidden text-[11px] text-slate-500 sm:block">Na počítači: mezerník</div>
+        <div className="absolute bottom-3 hidden text-[12px] text-slate-500 sm:block">Na počítači: mezerník</div>
       </div>
 
       {/* Last solve actions */}
@@ -326,7 +336,7 @@ export function TimerPage() {
               DNF
             </Button>
             <Button size="sm" icon="note" onClick={() => setNoteFor(last)}>
-              {last.note ? '✓' : ''}
+              {last.note ? 'upravit' : ''}
             </Button>
             <Button
               size="sm"
@@ -358,31 +368,32 @@ export function TimerPage() {
           />
         }
       >
-        Průměry (WCA)
+        Průměry
       </SectionTitle>
       <div className="grid grid-cols-2 gap-2">
         {stats.averages.map((a) => (
           <div key={a.n} className="card px-3.5 py-3">
-            <div className="flex items-baseline justify-between">
-              <span className="text-xs font-semibold text-steel-400">Ao{a.n}</span>
-              <span className="text-[10px] text-slate-500">best {formatTime(a.best)}</span>
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-[13px] font-medium text-slate-400">Průměr z {a.n}</span>
+              <span className="text-[12px] text-slate-500">Ao{a.n}</span>
             </div>
-            <div className="mt-1 font-mono text-xl font-semibold tabular text-slate-50">{formatTime(a.current)}</div>
+            <div className="mt-0.5 font-mono text-[22px] font-semibold text-slate-50">{formatTime(a.current)}</div>
+            <div className="text-[12px] text-slate-500">nejlépe {formatTime(a.best)}</div>
           </div>
         ))}
       </div>
       <div className="mt-2 grid grid-cols-3 gap-2 text-center">
         <div className="card px-2 py-2.5">
-          <div className="text-xs text-steel-400">PB single</div>
-          <div className="font-mono font-semibold text-brass-300">{formatTime(stats.best)}</div>
+          <div className="text-[13px] text-slate-400">Rekord</div>
+          <div className="font-mono text-[17px] font-semibold text-brass-500">{formatTime(stats.best)}</div>
         </div>
         <div className="card px-2 py-2.5">
-          <div className="text-xs text-steel-400">Mean</div>
-          <div className="font-mono font-semibold">{formatTime(stats.mean)}</div>
+          <div className="text-[13px] text-slate-400">Průměr</div>
+          <div className="font-mono text-[17px] font-semibold text-slate-50">{formatTime(stats.mean)}</div>
         </div>
         <div className="card px-2 py-2.5">
-          <div className="text-xs text-steel-400">Otevřeno</div>
-          <div className="font-mono font-semibold">
+          <div className="text-[13px] text-slate-400">Otevřeno</div>
+          <div className="font-mono text-[17px] font-semibold text-slate-50">
             {stats.solved}/{stats.count}
           </div>
         </div>
@@ -392,8 +403,8 @@ export function TimerPage() {
       <Card className="mt-3 p-3.5">
         <button className="flex w-full items-center justify-between" onClick={() => setShowMic((v) => !v)}>
           <span className="inline-flex items-center gap-2 text-sm font-semibold">
-            <Icon name="mic" size={16} className="text-azure-400" /> Akustické zastavení
-            <span className={`rounded-full px-2 py-0.5 text-[10px] ${settings.audioTrigger ? 'bg-ok/15 text-emerald-300' : 'bg-edge text-slate-400'}`}>{settings.audioTrigger ? 'ZAP' : 'VYP'}</span>
+            <IconTile icon="mic" color={IOS.red} /> <span className="text-[16px] font-normal text-slate-50">Zastavení zvukem</span>
+            <span className={`rounded-full px-2 py-0.5 text-[12px] ${settings.audioTrigger ? 'bg-ok/15 text-emerald-300' : 'bg-fill text-slate-400'}`}>{settings.audioTrigger ? 'zapnuto' : 'vypnuto'}</span>
           </span>
           <Icon name="chevronDown" size={16} className={showMic ? 'rotate-180' : ''} />
         </button>
@@ -412,7 +423,7 @@ export function TimerPage() {
                 <span className="text-slate-400">Citlivost (práh)</span>
                 <span className="font-mono text-brass-300">{Math.round(settings.audioThreshold * 100)} %</span>
               </div>
-              <div className="relative h-3 overflow-hidden rounded-full bg-black/25">
+              <div className="relative h-3 overflow-hidden rounded-full bg-well">
                 <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-ok via-brass-500 to-bad transition-[width] duration-75" style={{ width: `${mic.level * 100}%` }} />
                 <div className="absolute inset-y-0 w-0.5 bg-white" style={{ left: `${settings.audioThreshold * 100}%` }} />
               </div>
@@ -425,28 +436,28 @@ export function TimerPage() {
       {/* Solve list */}
       <SectionTitle sub={scope === 'lock' && lock ? `${lock.brand} ${lock.name}` : 'Všechny zámky'}>Historie ({scoped.length})</SectionTitle>
       {recent.length === 0 ? (
-        <p className="text-sm text-slate-500">Zatím žádné časy. Podrž stopky a jdi na to!</p>
+        <Card className="px-4 py-6 text-center text-[15px] text-slate-400">Zatím žádné časy. Podrž stopky a jdi na to!</Card>
       ) : (
-        <Card className="divide-y divide-white/[0.06]">
+        <Card className="divide-y divide-sep">
           {recent.map((s, i) => {
             const n = scoped.length - i;
             const l = data.locks.find((x) => x.id === s.lockId);
             const isPb = Number.isFinite(effectiveTime(s)) && effectiveTime(s) === stats.best;
             return (
-              <button key={s.id} className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-white/[0.02]" onClick={() => setDetail(s)}>
-                <span className="w-8 font-mono text-xs text-slate-500">{n}.</span>
-                <span className={`w-24 font-mono font-semibold tabular ${s.penalty === 'DNF' ? 'text-red-400' : isPb ? 'text-brass-300' : 'text-slate-100'}`}>
+              <button key={s.id} className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-fill-strong" onClick={() => setDetail(s)}>
+                <span className="w-7 font-mono text-[13px] text-slate-500">{n}</span>
+                <span className={`flex w-24 items-center gap-1 font-mono text-[17px] font-semibold ${s.penalty === 'DNF' ? 'text-red-300' : isPb ? 'text-brass-500' : 'text-slate-50'}`}>
                   {formatSolve(s.time, s.penalty)}
-                  {isPb && ' ★'}
+                  {isPb && <Icon name="star" size={13} strokeWidth={2.6} />}
                 </span>
-                <span className="flex-1 truncate text-xs text-slate-400">
+                <span className="flex flex-1 items-center gap-1.5 truncate text-[13px] text-slate-400">
                   {scope === 'all' && l ? `${l.name} · ` : ''}
                   {s.technique}
-                  {s.source === 'audio' && ' · 🎤'}
-                  {s.source === 'gauntlet' && ' · ⏱️'}
-                  {s.note && ' · 📝'}
+                  {s.source === 'audio' && <Icon name="mic" size={13} />}
+                  {s.source === 'gauntlet' && <Icon name="flag" size={13} />}
+                  {s.note && <Icon name="note" size={13} />}
                 </span>
-                <span className="text-[11px] text-slate-500">{relativeDay(s.date)}</span>
+                <span className="text-[13px] text-slate-500">{relativeDay(s.date)}</span>
               </button>
             );
           })}
@@ -457,7 +468,7 @@ export function TimerPage() {
       <AnimatePresence>
         {phase === 'running' && (
           <motion.div
-            className="no-select touch-none fixed inset-0 z-[70] flex cursor-pointer flex-col items-center justify-center bg-black/25"
+            className="no-select touch-none fixed inset-0 z-[70] flex cursor-pointer flex-col items-center justify-center bg-well"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -471,7 +482,7 @@ export function TimerPage() {
               {settings.audioTrigger && mic.status === 'on' && (
                 <div className="mt-2 flex items-center justify-center gap-2">
                   <Icon name="mic" size={14} className="text-emerald-400" />
-                  <div className="h-1.5 w-32 overflow-hidden rounded-full bg-white/[0.07]">
+                  <div className="h-1.5 w-32 overflow-hidden rounded-full bg-fill">
                     <div className="h-full bg-emerald-400" style={{ width: `${mic.level * 100}%` }} />
                   </div>
                 </div>
@@ -509,14 +520,14 @@ function SolveSheet({ solve, onClose, onNote }: { solve: SolveRecord | null; onC
               </Button>
             ))}
           </div>
-          <dl className="mt-4 space-y-2 rounded-2xl bg-black/25 p-3 text-sm">
+          <dl className="mt-4 space-y-2 rounded-2xl bg-well p-3 text-sm">
             <Row k="Zámek" v={l ? `${l.brand} ${l.name}` : '—'} />
             <Row k="Planžeta" v={tool(s.pickId) ? `${tool(s.pickId)!.name} (${TOOL_PROFILES[tool(s.pickId)!.profile].label}, ${thicknessLabel(tool(s.pickId)!.thickness)})` : '—'} />
             <Row k="Napínák" v={tool(s.tensionId) ? `${tool(s.tensionId)!.position} ${tool(s.tensionId)!.name}` : '—'} />
             <Row k="Technika" v={s.technique} />
             <Row k="Zdroj" v={s.source === 'audio' ? 'Akustické zastavení' : s.source === 'gauntlet' ? '3-Lock Gauntlet' : 'Stopky'} />
           </dl>
-          <div className="mt-3 rounded-2xl border border-white/10 p-3 text-sm">
+          <div className="mt-3 rounded-2xl border border-sep p-3 text-sm">
             <div className="mb-1 text-xs text-steel-400">Poznámka</div>
             <div className="text-slate-300">{s.note || <span className="text-slate-500">Bez poznámky</span>}</div>
           </div>
@@ -576,11 +587,38 @@ function NoteSheet({ solve, onClose }: { solve: SolveRecord | null; onClose: () 
       <textarea className="field min-h-[120px]" autoFocus value={text} onChange={(e) => setText(e.target.value)} placeholder="např. 3. stavítko bylo spool, pomohlo povolit napínák" />
       <div className="mt-3 flex flex-wrap gap-2">
         {suggestions.map((s) => (
-          <button key={s} className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-300" onClick={() => setText((t) => (t ? `${t} ${s}` : s))}>
+          <button key={s} className="rounded-full border border-sep px-3 py-1 text-xs text-slate-300" onClick={() => setText((t) => (t ? `${t} ${s}` : s))}>
             {s}
           </button>
         ))}
       </div>
     </Sheet>
+  );
+}
+
+function TimerRing({ phase, progress, children }: { phase: string; progress: number; children: React.ReactNode }) {
+  const size = 232;
+  const r = 104;
+  const c = 2 * Math.PI * r;
+  const color = phase === 'ready' ? 'var(--color-ok)' : phase === 'holding' ? 'var(--color-bad)' : phase === 'inspect' ? '#FF9500' : 'var(--color-brass-500)';
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true" className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-fill)" strokeWidth={14} />
+        <motion.circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth={14}
+          strokeLinecap="round"
+          strokeDasharray={c}
+          animate={{ strokeDashoffset: c * (1 - progress) }}
+          transition={{ duration: phase === 'holding' ? 0.1 : 0.5, ease: 'easeOut' }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">{children}</div>
+    </div>
   );
 }

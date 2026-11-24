@@ -2,22 +2,24 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useStore } from '../../store/AppStore';
-import { Button, Card, PageHeader, SectionTitle } from '../../components/ui';
-import { Icon, type IconName } from '../../components/Icon';
+import { Button, Card, IconTile, ListGroup, ListRow, PageHeader, Rings, SectionTitle } from '../../components/ui';
+import { IOS } from '../../lib/colors';
+import { Icon } from '../../components/Icon';
 import { ToolArt } from '../../components/svg/ToolArt';
 import { effectiveTime, median, rollingAverages, summarize } from '../../lib/stats';
 import { formatDate, formatDuration, formatTime, plural } from '../../lib/format';
 import { TECHNIQUES, beltOf } from '../../data/labels';
 import type { Belt, SolveRecord, ToolProfile } from '../../types';
 
-/* Chart palette – validated (dataviz validator, dark mode) against the card surface #262038:
-   blue #3987e5 / amber #d97706 pass lightness band, chroma, CVD (ΔE 27) and contrast. */
-const C_SINGLE = '#3987e5';
-const C_AVG = '#d97706';
-const GRID = 'rgba(255,255,255,0.06)';
-const AXIS = '#827a97';
+/* Chart palette – validated (dataviz validator) on the white card (light) and #1C1C1E (dark):
+   iOS blue #007AFF / deep orange #D27000 pass lightness band, chroma, CVD (ΔE 32) and 3:1 contrast in both. */
+const C_SINGLE = '#007AFF';
+const C_AVG = '#D27000';
+const GRID = 'rgba(120,120,128,0.2)';
+const AXIS = '#8E8E93';
 
 const DAY = 86_400_000;
+const WEEK_GOAL_MS = 30 * 60_000;
 const dayKey = (t: number) => {
   const d = new Date(t);
   d.setHours(0, 0, 0, 0);
@@ -28,7 +30,7 @@ function TimeTooltip({ active, payload }: { active?: boolean; payload?: { payloa
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
   return (
-    <div className="rounded-2xl border border-white/10 bg-ink-900/95 px-3.5 py-2.5 text-xs shadow-xl backdrop-blur">
+    <div className="rounded-2xl border border-sep bg-ink-900/95 px-3.5 py-2.5 text-xs shadow-xl backdrop-blur">
       <div className="mb-1 text-slate-400">
         Pokus {p.idx} · {formatDate(p.date)}
       </div>
@@ -44,7 +46,7 @@ function TimeTooltip({ active, payload }: { active?: boolean; payload?: { payloa
           <span className="ml-auto pl-4 font-mono font-bold text-slate-50">{formatTime(p.ao5)}</span>
         </div>
       )}
-      {p.note && <div className="mt-1 max-w-[190px] text-slate-400">📝 {p.note}</div>}
+      {p.note && <div className="mt-1 max-w-[190px] text-slate-400">Poznámka: {p.note}</div>}
     </div>
   );
 }
@@ -99,7 +101,6 @@ export function StatsPage() {
   const ao5 = bestAo(5);
   const ao12 = bestAo(12);
   const pbSolve = solves.filter((s) => Number.isFinite(effectiveTime(s))).sort((a, b) => effectiveTime(a) - effectiveTime(b))[0];
-  const successPct = all.count ? Math.round((all.solved / all.count) * 100) : 0;
 
   // practice days & streaks
   const practice = useMemo(() => {
@@ -120,6 +121,16 @@ export function StatsPage() {
       longest = Math.max(longest, run);
     });
     return { days, current, longest };
+  }, [solves]);
+
+  // this week (last 7 days, including today)
+  const week = useMemo(() => {
+    const from = dayKey(Date.now()) - 6 * DAY;
+    const ss = solves.filter((x) => x.date >= from);
+    const days = new Set(ss.map((x) => dayKey(x.date))).size;
+    const solved = ss.filter((x) => Number.isFinite(effectiveTime(x))).length;
+    const time = ss.reduce((acc, x) => acc + (Number.isFinite(effectiveTime(x)) ? effectiveTime(x) : x.time), 0);
+    return { count: ss.length, solved, days, time };
   }, [solves]);
 
   // progress chart data
@@ -280,34 +291,40 @@ export function StatsPage() {
     <div>
       <PageHeader title="Statistiky" subtitle="Jak se ti daří a kde máš rezervy" />
 
-      {/* Hero summary */}
-      <div className="relative overflow-hidden rounded-[1.8rem] border border-white/10 bg-[linear-gradient(135deg,#4a2f6b_0%,#3a2a5c_40%,#2a2347_100%)] p-5 shadow-[0_24px_50px_-28px_rgba(0,0,0,0.9)]">
-        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-brass-500/25 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-10 h-56 w-56 rounded-full bg-[#4fd8c4]/15 blur-3xl" />
-        <div className="relative flex items-center gap-4">
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-semibold text-white/70">Otevřené zámky</div>
-            <div className="font-display text-[3.4rem] font-semibold leading-none text-white">{all.solved}</div>
-            <div className="mt-1.5 text-sm text-white/70">
-              z {all.count} {plural(all.count, 'pokusu', 'pokusů', 'pokusů')} · {perLock.length} {plural(perLock.length, 'zámek', 'zámky', 'zámků')}
-            </div>
+      {/* Summary – Apple Fitness style rings */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between">
+          <span className="text-[17px] font-semibold text-slate-50">Tento týden</span>
+          <span className="text-[13px] text-slate-400">
+            celkem {all.solved}/{all.count} otevřeno
+          </span>
+        </div>
+        <div className="mt-3 flex items-center gap-5">
+          <Rings
+            size={128}
+            rings={[
+              { label: 'Úspěšnost', value: week.count ? week.solved / week.count : 0, color: IOS.green },
+              { label: 'Čas tréninku', value: week.time / WEEK_GOAL_MS, color: IOS.orange },
+              { label: 'Dny tréninku', value: week.days / 7, color: IOS.blue },
+            ]}
+          />
+          <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+            <RingLegend color={IOS.green} label="Úspěšnost" value={week.count ? `${Math.round((week.solved / week.count) * 100)} %` : '—'} sub={`${week.solved} z ${week.count}`} />
+            <RingLegend color={IOS.orange} label="Čas tréninku" value={formatDuration(week.time)} sub={`cíl ${WEEK_GOAL_MS / 60000} min`} />
+            <RingLegend color={IOS.blue} label="Dny tréninku" value={`${week.days}/7`} sub={practice.current ? `série ${practice.current} ${plural(practice.current, 'den', 'dny', 'dní')}` : 'bez série'} />
           </div>
-          <SuccessRing pct={successPct} />
         </div>
-        <div className="relative mt-5 grid grid-cols-3 gap-2">
-          <HeroFact icon="timer" value={formatDuration(all.totalTime)} label="u stopek" />
-          <HeroFact icon="flame" value={`${practice.current}`} label={plural(practice.current, 'den v řadě', 'dny v řadě', 'dní v řadě')} />
-          <HeroFact icon="flag" value={`${practice.days.size}`} label={plural(practice.days.size, 'tréninkový den', 'tréninkové dny', 'tréninkových dní')} />
-        </div>
-      </div>
+      </Card>
 
       {/* Records */}
-      <SectionTitle sub="Tvoje nejlepší výkony">Osobní rekordy</SectionTitle>
-      <div className="grid grid-cols-3 gap-2">
-        <Record icon="trophy" tint="#ffb547" label="Nejrychlejší" value={formatTime(all.best)} sub={pbSolve ? lockName(pbSolve.lockId) : '—'} />
-        <Record icon="target" tint="#b69cff" label="Průměr z 5" value={formatTime(ao5?.v)} sub={ao5?.lock ?? 'chce 5 pokusů'} />
-        <Record icon="star" tint="#4fd8c4" label="Průměr z 12" value={formatTime(ao12?.v)} sub={ao12?.lock ?? 'chce 12 pokusů'} />
-      </div>
+      <SectionTitle>Osobní rekordy</SectionTitle>
+      <ListGroup>
+        <ListRow icon="trophy" color={IOS.orange} title="Nejrychlejší otevření" sub={pbSolve ? lockName(pbSolve.lockId) : 'zatím žádné'} value={<span className="font-mono font-semibold text-slate-50">{formatTime(all.best)}</span>} />
+        <ListRow icon="target" color={IOS.purple} title="Nejlepší průměr z 5" sub={ao5?.lock ?? 'chce 5 pokusů na jednom zámku'} value={<span className="font-mono font-semibold text-slate-50">{formatTime(ao5?.v)}</span>} />
+        <ListRow icon="star" color={IOS.teal} title="Nejlepší průměr z 12" sub={ao12?.lock ?? 'chce 12 pokusů na jednom zámku'} value={<span className="font-mono font-semibold text-slate-50">{formatTime(ao12?.v)}</span>} />
+        <ListRow icon="timer" color={IOS.indigo} title="Čas u stopek" sub={`${practice.days.size} ${plural(practice.days.size, 'tréninkový den', 'tréninkové dny', 'tréninkových dní')}`} value={formatDuration(all.totalTime)} />
+        <ListRow icon="flame" color={IOS.red} title="Nejdelší série" value={`${practice.longest} ${plural(practice.longest, 'den', 'dny', 'dní')}`} last />
+      </ListGroup>
 
       {/* Progress */}
       <SectionTitle sub="Každá tečka je jeden pokus, čára ukazuje průměr z posledních pěti">Tvůj pokrok</SectionTitle>
@@ -369,13 +386,13 @@ export function StatsPage() {
                   <CartesianGrid stroke={GRID} vertical={false} />
                   <XAxis dataKey="idx" tick={{ fill: AXIS, fontSize: 11 }} tickLine={false} axisLine={false} />
                   <YAxis tickFormatter={fmtAxis} tick={{ fill: AXIS, fontSize: 11 }} tickLine={false} axisLine={false} width={48} />
-                  <Tooltip content={<TimeTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.25)', strokeDasharray: '3 4' }} />
+                  <Tooltip content={<TimeTooltip />} cursor={{ stroke: 'rgba(120,120,128,0.45)', strokeDasharray: '3 4' }} />
                   <Area name="Průměr z 5" type="monotone" dataKey="ao5" stroke={C_AVG} strokeWidth={2.5} fill="url(#ao5-fill)" connectNulls isAnimationActive={false} />
                   <Line
                     name="Pokus"
                     dataKey="single"
                     stroke="none"
-                    dot={{ r: 4.5, fill: C_SINGLE, stroke: '#262038', strokeWidth: 2 }}
+                    dot={{ r: 4.5, fill: C_SINGLE, stroke: 'var(--color-card)', strokeWidth: 2 }}
                     activeDot={{ r: 7, fill: C_SINGLE, stroke: '#fff', strokeWidth: 2 }}
                     isAnimationActive={false}
                   />
@@ -386,7 +403,7 @@ export function StatsPage() {
               {showTable ? 'Skrýt tabulku' : 'Zobrazit jako tabulku'}
             </button>
             {showTable && (
-              <div className="mt-2 max-h-56 overflow-y-auto rounded-2xl bg-black/25">
+              <div className="mt-2 max-h-56 overflow-y-auto rounded-2xl bg-well">
                 <table className="w-full text-xs">
                   <thead className="sticky top-0 bg-ink-900 text-slate-500">
                     <tr>
@@ -398,7 +415,7 @@ export function StatsPage() {
                   </thead>
                   <tbody className="font-mono">
                     {progress.map((p) => (
-                      <tr key={p.idx} className="border-t border-white/[0.05]">
+                      <tr key={p.idx} className="border-t border-sep">
                         <td className="px-3 py-1.5 text-slate-500">{p.idx}</td>
                         <td className="px-3 py-1.5 text-slate-400">{formatDate(p.date, false)}</td>
                         <td className="px-3 py-1.5 text-right font-bold">{p.single === null ? 'DNF' : formatTime(p.single)}</td>
@@ -431,8 +448,8 @@ export function StatsPage() {
                 title={c.future ? undefined : `${formatDate(c.t, false)}: ${c.c} ${plural(c.c, 'pokus', 'pokusy', 'pokusů')}`}
                 className="aspect-square rounded-full"
                 style={{
-                  background: c.future ? 'transparent' : c.c ? `rgba(255, 173, 51, ${0.3 + 0.7 * (c.c / heat.max)})` : 'rgba(255,255,255,0.06)',
-                  boxShadow: c.c === heat.max && c.c > 0 ? '0 0 10px rgba(255,173,51,0.55)' : undefined,
+                  background: c.future ? 'transparent' : c.c ? `rgba(0, 122, 255, ${0.25 + 0.75 * (c.c / heat.max)})` : 'rgba(120,120,128,0.14)',
+                  
                 }}
               />
             ))}
@@ -446,7 +463,7 @@ export function StatsPage() {
           <span className="flex items-center gap-1 text-[10px] text-slate-500">
             méně
             {[0, 0.33, 0.66, 1].map((v) => (
-              <span key={v} className="h-2.5 w-2.5 rounded-full" style={{ background: v ? `rgba(255,173,51,${0.3 + 0.7 * v})` : 'rgba(255,255,255,0.06)' }} />
+              <span key={v} className="h-2.5 w-2.5 rounded-full" style={{ background: v ? `rgba(0,122,255,${0.25 + 0.75 * v})` : 'rgba(120,120,128,0.14)' }} />
             ))}
             více
           </span>
@@ -459,7 +476,7 @@ export function StatsPage() {
         {toolUsage.length ? (
           toolUsage.map((t, i) => (
             <div key={t.id} className="flex items-center gap-3 rounded-2xl px-2.5 py-2">
-              <div className="flex h-10 w-16 shrink-0 items-center justify-center rounded-xl bg-black/20 px-1.5">
+              <div className="flex h-10 w-16 shrink-0 items-center justify-center rounded-xl bg-well px-1.5">
                 <ToolArt profile={t.profile} className="h-full w-full" />
               </div>
               <div className="min-w-0 flex-1">
@@ -467,10 +484,10 @@ export function StatsPage() {
                   <span className="truncate text-sm font-bold text-slate-100">{t.name}</span>
                   <span className="shrink-0 font-mono text-sm font-extrabold text-slate-200">{t.count}×</span>
                 </div>
-                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-fill">
                   <motion.div
                     className="h-full rounded-full"
-                    style={{ background: i === 0 ? 'linear-gradient(90deg,#ffc65a,#ff8f1f)' : 'linear-gradient(90deg,#7c6aa8,#a58ad6)' }}
+                    style={{ background: IOS.blue, opacity: i === 0 ? 1 : 0.55 }}
                     initial={{ width: 0 }}
                     animate={{ width: `${(t.count / toolUsage[0].count) * 100}%` }}
                     transition={{ duration: 0.7, delay: i * 0.05 }}
@@ -539,9 +556,9 @@ export function StatsPage() {
                     <b className="font-mono text-slate-200">{t.count}×</b> · průměr {formatTime(t.avg)}
                   </span>
                 </div>
-                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-fill">
                   <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-[#3f9fe8] to-[#6cc9ff]"
+                    className="h-full rounded-full bg-brass-500"
                     initial={{ width: 0 }}
                     animate={{ width: `${(t.count / techTotal) * 100}%` }}
                     transition={{ duration: 0.7 }}
@@ -556,11 +573,10 @@ export function StatsPage() {
       {/* Locks ranking */}
       <SectionTitle sub="Kde se cítíš jistě a co tě ještě potrápí">Zámky</SectionTitle>
       <div className="space-y-3">
-        <LockGroup tone="comfort" title="Pohodové" emoji="😌" items={comfort} metric={(r) => `průměr ${formatTime(r.meanT)}`} />
+        <LockGroup tone="comfort" title="Pohodové" items={comfort} metric={(r) => `průměr ${formatTime(r.meanT)}`} />
         <LockGroup
           tone="nemesis"
           title="Tvoje nemesis"
-          emoji="😈"
           items={nemesis}
           metric={(r) => (r.dnfRate > 0 ? `průměr ${formatTime(r.meanT)} · ${Math.round(r.dnfRate * 100)} % nedokončeno` : `průměr ${formatTime(r.meanT)}`)}
           action={(r) => (
@@ -580,69 +596,25 @@ export function StatsPage() {
 
       {/* Games */}
       <SectionTitle>Simulátor a hry</SectionTitle>
-      <div className="grid grid-cols-3 gap-2">
-        <Record icon="lock" tint="#b69cff" label="Simulátor" value={`${sims.length}×`} sub={sims.length ? `nejlépe ${formatTime(Math.min(...sims.map((s) => s.time ?? Infinity)))}` : 'otevřeno'} />
-        <Record icon="zap" tint="#4fd8c4" label="Kvíz" value={quizBest ? String(quizBest) : '—'} sub="bodů rekord" />
-        <Record icon="flag" tint="#ff8a6b" label="Gauntlet" value={formatTime(gauntletPb?.time)} sub={gauntletPb ? `${gauntletPb.difficulty} · ${gauntletPb.rank}` : 'reálné zámky'} />
+      <ListGroup>
+        <ListRow icon="lock" color={IOS.purple} title="Otevřeno v simulátoru" sub={sims.length ? `nejlépe ${formatTime(Math.min(...sims.map((s) => s.time ?? Infinity)))}` : undefined} value={`${sims.length}×`} />
+        <ListRow icon="help" color={IOS.teal} title="Rekord v kvízu" value={quizBest ? `${quizBest} b.` : '—'} />
+        <ListRow icon="flag" color={IOS.red} title="Gauntlet" sub={gauntletPb ? `${gauntletPb.difficulty} · hodnocení ${gauntletPb.rank}` : 'na reálných zámcích'} value={formatTime(gauntletPb?.time)} last />
+      </ListGroup>
+    </div>
+  );
+}
+
+function RingLegend({ color, label, value, sub }: { color: string; label: string; value: string; sub: string }) {
+  return (
+    <div className="min-w-0">
+      <div className="text-[13px] font-semibold" style={{ color }}>
+        {label}
       </div>
-    </div>
-  );
-}
-
-function SuccessRing({ pct }: { pct: number }) {
-  const r = 34;
-  const c = 2 * Math.PI * r;
-  return (
-    <div className="relative h-[92px] w-[92px] shrink-0">
-      <svg viewBox="0 0 92 92" className="h-full w-full -rotate-90">
-        <defs>
-          <linearGradient id="ring-g" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#ffd27a" />
-            <stop offset="1" stopColor="#ff7a59" />
-          </linearGradient>
-        </defs>
-        <circle cx={46} cy={46} r={r} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={9} />
-        <motion.circle
-          cx={46}
-          cy={46}
-          r={r}
-          fill="none"
-          stroke="url(#ring-g)"
-          strokeWidth={9}
-          strokeLinecap="round"
-          strokeDasharray={c}
-          initial={{ strokeDashoffset: c }}
-          animate={{ strokeDashoffset: c * (1 - pct / 100) }}
-          transition={{ duration: 1, ease: 'easeOut' }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-mono text-xl font-extrabold leading-none text-white">{pct} %</span>
-        <span className="mt-0.5 text-[10px] font-semibold text-white/60">úspěšnost</span>
+      <div className="flex items-baseline gap-1.5">
+        <span className="font-mono text-[20px] font-semibold leading-tight text-slate-50">{value}</span>
+        <span className="truncate text-[13px] text-slate-400">{sub}</span>
       </div>
-    </div>
-  );
-}
-
-function HeroFact({ icon, value, label }: { icon: IconName; value: string; label: string }) {
-  return (
-    <div className="rounded-2xl bg-black/20 px-3 py-2.5">
-      <Icon name={icon} size={16} className="text-brass-300" />
-      <div className="mt-1 font-mono text-lg font-extrabold leading-tight text-white">{value}</div>
-      <div className="text-[11px] leading-tight text-white/60">{label}</div>
-    </div>
-  );
-}
-
-function Record({ icon, tint, label, value, sub }: { icon: IconName; tint: string; label: string; value: ReactNode; sub: string }) {
-  return (
-    <div className="card flex flex-col px-3 py-3">
-      <span className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: `${tint}24`, color: tint }}>
-        <Icon name={icon} size={16} />
-      </span>
-      <div className="mt-2 text-xs font-semibold text-slate-400">{label}</div>
-      <div className="font-mono text-xl font-extrabold leading-tight text-slate-50">{value}</div>
-      <div className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-slate-500">{sub}</div>
     </div>
   );
 }
@@ -652,11 +624,11 @@ function LockChip({ active, belt, onClick, children }: { active: boolean; belt?:
     <button
       type="button"
       onClick={onClick}
-      className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-[0.8rem] font-bold transition ${
-        active ? 'border-brass-400/60 bg-brass-400/15 text-brass-200' : 'border-white/[0.08] bg-white/[0.04] text-slate-400'
+      className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[14px] transition ${
+        active ? 'bg-brass-500 font-semibold text-white' : 'bg-fill font-medium text-slate-100'
       }`}
     >
-      {belt && <span className="h-2.5 w-2.5 rounded-full ring-1 ring-white/20" style={{ background: beltOf(belt).color }} />}
+      {belt && <span className="h-2.5 w-2.5 rounded-full ring-1 ring-sep" style={{ background: beltOf(belt).color }} />}
       {children}
     </button>
   );
@@ -667,50 +639,44 @@ type Ranked = { lock: { id: string; brand: string; name: string; belt: Belt }; s
 function LockGroup<T extends Ranked>({
   tone,
   title,
-  emoji,
   items,
   metric,
   action,
 }: {
   tone: 'comfort' | 'nemesis';
   title: string;
-  emoji: string;
   items: T[];
   metric: (r: T) => string;
   action?: (r: T) => ReactNode;
 }) {
-  const bg =
-    tone === 'comfort'
-      ? 'bg-[linear-gradient(160deg,rgba(52,211,153,0.14),rgba(30,25,46,0.6)_60%)]'
-      : 'bg-[linear-gradient(160deg,rgba(251,113,133,0.15),rgba(30,25,46,0.6)_60%)]';
   return (
-    <div className={`overflow-hidden rounded-[1.45rem] border border-white/[0.07] ${bg}`}>
-      <div className="flex items-center gap-2 px-4 pb-1 pt-3.5">
-        <span className="text-lg">{emoji}</span>
-        <span className={`font-display text-base font-semibold ${tone === 'comfort' ? 'text-emerald-200' : 'text-rose-200'}`}>{title}</span>
+    <ListGroup>
+      <div className="flex items-center gap-3 px-4 pb-1 pt-3">
+        <IconTile icon={tone === 'comfort' ? 'check' : 'target'} color={tone === 'comfort' ? IOS.green : IOS.red} />
+        <span className="text-[17px] font-semibold text-slate-50">{title}</span>
       </div>
       {items.length ? (
-        items.map((r) => {
+        items.map((r, i) => {
           const b = beltOf(r.lock.belt);
           return (
-            <div key={r.lock.id} className="flex items-center gap-3 px-4 py-2.5">
-              <span className="h-3 w-3 shrink-0 rounded-full ring-2 ring-white/10" style={{ background: b.color }} title={`${b.label} pás`} />
+            <div key={r.lock.id} className="relative flex items-center gap-3 py-2.5 pl-[58px] pr-4">
+              <span className="absolute left-[25px] h-3 w-3 rounded-full ring-1 ring-sep" style={{ background: b.color }} title={`${b.label} pás`} />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-bold text-slate-100">
+                <div className="truncate text-[16px] text-slate-50">
                   {r.lock.brand} {r.lock.name}
                 </div>
-                <div className="text-xs text-slate-400">
+                <div className="text-[13px] text-slate-400">
                   {metric(r)} · {r.solves.length} {plural(r.solves.length, 'pokus', 'pokusy', 'pokusů')}
                 </div>
               </div>
               {action?.(r)}
+              {i < items.length - 1 && <span className="absolute bottom-0 left-[58px] right-0 h-px bg-sep" />}
             </div>
           );
         })
       ) : (
-        <p className="px-4 pb-3 text-sm text-slate-500">Zatím bez dat.</p>
+        <p className="px-4 pb-3 pl-[58px] text-[15px] text-slate-400">Zatím bez dat.</p>
       )}
-      <div className="h-1.5" />
-    </div>
+    </ListGroup>
   );
 }

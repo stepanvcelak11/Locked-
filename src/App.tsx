@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { AppStoreProvider, useStore } from './store/AppStore';
 import { BottomNav, EthicsGate, Toasts, TopBar } from './components/Shell';
 import { TimerPage } from './features/timer/TimerPage';
@@ -17,11 +17,30 @@ function Loading() {
   );
 }
 
+/** Applies the chosen appearance to <html data-theme> and the browser chrome colour. */
+function ThemeSync() {
+  const { data } = useStore();
+  const theme = data.settings.theme ?? 'light';
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.theme = theme;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const apply = () => {
+      const dark = theme === 'dark' || (theme === 'system' && mq.matches);
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#000000' : '#f2f2f7');
+    };
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, [theme]);
+  return null;
+}
+
 function Screens() {
   const { tab } = useStore();
   return (
-    <main className="mx-auto max-w-2xl px-4 pb-[calc(6rem+var(--safe-bottom))] pt-4">
-      <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16 }}>
+    <main className="mx-auto max-w-2xl px-4 pb-[calc(6rem+var(--safe-bottom))] pt-0">
+      <motion.div key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }}>
           <Suspense fallback={<Loading />}>
             {tab === 'timer' && <TimerPage />}
             {tab === 'arcade' && <ArcadePage />}
@@ -37,6 +56,7 @@ function Screens() {
 export default function App() {
   return (
     <AppStoreProvider>
+      <ThemeSync />
       <TopBar />
       <Screens />
       <BottomNav />

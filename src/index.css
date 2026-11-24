@@ -1,78 +1,218 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/inter/wght.css';
 
-@import '@fontsource-variable/nunito/wght.css';
-@import '@fontsource-variable/fraunces/soft.css';
-
+/*
+ * iOS-inspired design tokens. Light is the default; dark mirrors iOS dark mode.
+ * Utilities keep their historic names (slate = label greys, brass = tint/accent,
+ * ink = backgrounds) so every component follows the theme switch.
+ */
 @theme {
-  /* Warm night: plum-tinted surfaces instead of cold slate */
-  --color-ink-950: #120f1d;
-  --color-ink-900: #1a1628;
-  --color-ink-850: #211c32;
-  --color-panel: #2a2440;
-  --color-edge: #3b3454;
-  /* Honey brass – the primary accent */
-  --color-brass-300: #ffe1a6;
-  --color-brass-400: #ffc65a;
-  --color-brass-500: #ffad33;
-  --color-brass-600: #ff8f1f;
-  --color-steel-300: #ddd6ea;
-  --color-steel-400: #a99fbf;
-  --color-azure-400: #6cc9ff;
-  --color-ok: #34d399;
-  --color-bad: #fb7185;
-  /* Section accents */
-  --color-coral-300: #ffb4a1;
-  --color-coral-400: #ff8a6b;
-  --color-coral-500: #ff6f52;
-  /* Slate re-tinted warm (lavender grey) so every text-slate-* follows the new mood */
-  --color-slate-50: #fbf9fd;
-  --color-slate-100: #f4f0fa;
-  --color-slate-200: #e7e1f0;
-  --color-slate-300: #d0c8de;
-  --color-slate-400: #aaa1bd;
-  --color-slate-500: #827a97;
-  --color-slate-600: #605875;
-  --color-slate-700: #453f5a;
-  --color-slate-800: #2f2942;
-  --color-slate-900: #201b2e;
-  --color-slate-950: #151121;
-  /* Softer geometry everywhere */
-  --radius-md: 0.6rem;
-  --radius-lg: 0.85rem;
-  --radius-xl: 1.1rem;
-  --radius-2xl: 1.45rem;
-  --radius-3xl: 1.9rem;
-  --font-sans: 'Nunito Variable', 'Nunito', ui-rounded, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  /* Numbers: same rounded face with tabular figures (see .font-mono below) – no hard monospace */
-  --font-mono: 'Nunito Variable', 'Nunito', ui-rounded, ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Fraunces Variable', 'Fraunces', Georgia, 'Times New Roman', serif;
+  --color-slate-50: #000000;
+  --color-slate-100: #1c1c1e;
+  --color-slate-200: #2c2c2e;
+  --color-slate-300: #3a3a3c;
+  --color-slate-400: #6c6c70;
+  --color-slate-500: #7a7a80;
+  --color-slate-600: #aeaeb2;
+  --color-slate-700: #c7c7cc;
+  --color-slate-800: #d1d1d6;
+  --color-slate-900: #e5e5ea;
+  --color-slate-950: #f2f2f7;
+  --color-steel-300: #3a3a3c;
+  --color-steel-400: #6c6c70;
+  --color-ink-950: #f2f2f7;
+  --color-ink-900: #ffffff;
+  --color-ink-850: #ffffff;
+  --color-panel: #ffffff;
+  --color-edge: #d1d1d6;
+  --color-card: #ffffff;
+  --color-well: #f2f2f7;
+  --color-fill: rgba(118, 118, 128, 0.12);
+  --color-fill-strong: rgba(118, 118, 128, 0.22);
+  --color-sep: rgba(60, 60, 67, 0.17);
+  --color-seg: #ffffff;
+  --color-bar: rgba(249, 249, 249, 0.9);
+  --color-brass-200: #007aff;
+  --color-brass-300: #007aff;
+  --color-brass-400: #007aff;
+  --color-brass-500: #007aff;
+  --color-brass-600: #0062cc;
+  --color-azure-400: #0071a4;
+  --color-emerald-200: #248a3d;
+  --color-emerald-300: #248a3d;
+  --color-emerald-400: #248a3d;
+  --color-emerald-500: #34c759;
+  --color-emerald-600: #248a3d;
+  --color-emerald-950: #e7f7eb;
+  --color-red-200: #d70015;
+  --color-red-300: #d70015;
+  --color-red-400: #d70015;
+  --color-red-950: #fdecec;
+  --color-rose-200: #d70015;
+  --color-rose-300: #d70015;
+  --color-rose-400: #ff2d55;
+  --color-amber-300: #c93400;
+  --color-orange-300: #c93400;
+  --color-orange-400: #c93400;
+  --color-orange-500: #ff9500;
+  --color-violet-400: #8944ab;
+  --color-ok: #34c759;
+  --color-bad: #ff3b30;
+  --color-coral-300: #ff9500;
+  --color-coral-400: #ff9500;
+  --color-coral-500: #ff9500;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1.125rem;
+  --radius-3xl: 1.5rem;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter Variable', 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter Variable', 'Inter', system-ui, sans-serif;
+}
+
+:root[data-theme='dark'] {
+  --color-slate-50: #ffffff;
+  --color-slate-100: #f2f2f7;
+  --color-slate-200: #e5e5ea;
+  --color-slate-300: #d1d1d6;
+  --color-slate-400: #98989f;
+  --color-slate-500: #8d8d93;
+  --color-slate-600: #636366;
+  --color-slate-700: #48484a;
+  --color-slate-800: #3a3a3c;
+  --color-slate-900: #2c2c2e;
+  --color-slate-950: #1c1c1e;
+  --color-steel-300: #d1d1d6;
+  --color-steel-400: #98989f;
+  --color-ink-950: #000000;
+  --color-ink-900: #1c1c1e;
+  --color-ink-850: #2c2c2e;
+  --color-panel: #1c1c1e;
+  --color-edge: #38383a;
+  --color-card: #1c1c1e;
+  --color-well: #2c2c2e;
+  --color-fill: rgba(118, 118, 128, 0.24);
+  --color-fill-strong: rgba(118, 118, 128, 0.36);
+  --color-sep: rgba(84, 84, 88, 0.6);
+  --color-seg: #636366;
+  --color-bar: rgba(22, 22, 24, 0.88);
+  --color-brass-200: #409cff;
+  --color-brass-300: #409cff;
+  --color-brass-400: #409cff;
+  --color-brass-500: #0a84ff;
+  --color-brass-600: #0071e3;
+  --color-azure-400: #64d2ff;
+  --color-emerald-200: #30d158;
+  --color-emerald-300: #30d158;
+  --color-emerald-400: #30d158;
+  --color-emerald-500: #30d158;
+  --color-emerald-600: #248a3d;
+  --color-emerald-950: #0b2a14;
+  --color-red-200: #ff6961;
+  --color-red-300: #ff6961;
+  --color-red-400: #ff6961;
+  --color-red-950: #3a0e0e;
+  --color-rose-200: #ff6961;
+  --color-rose-300: #ff6961;
+  --color-rose-400: #ff375f;
+  --color-amber-300: #ffb340;
+  --color-orange-300: #ffb340;
+  --color-orange-400: #ffb340;
+  --color-orange-500: #ff9f0a;
+  --color-violet-400: #bf5af2;
+  --color-ok: #30d158;
+  --color-bad: #ff453a;
+  --color-coral-300: #ff9f0a;
+  --color-coral-400: #ff9f0a;
+  --color-coral-500: #ff9f0a;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme='system'] {
+  --color-slate-50: #ffffff;
+  --color-slate-100: #f2f2f7;
+  --color-slate-200: #e5e5ea;
+  --color-slate-300: #d1d1d6;
+  --color-slate-400: #98989f;
+  --color-slate-500: #8d8d93;
+  --color-slate-600: #636366;
+  --color-slate-700: #48484a;
+  --color-slate-800: #3a3a3c;
+  --color-slate-900: #2c2c2e;
+  --color-slate-950: #1c1c1e;
+  --color-steel-300: #d1d1d6;
+  --color-steel-400: #98989f;
+  --color-ink-950: #000000;
+  --color-ink-900: #1c1c1e;
+  --color-ink-850: #2c2c2e;
+  --color-panel: #1c1c1e;
+  --color-edge: #38383a;
+  --color-card: #1c1c1e;
+  --color-well: #2c2c2e;
+  --color-fill: rgba(118, 118, 128, 0.24);
+  --color-fill-strong: rgba(118, 118, 128, 0.36);
+  --color-sep: rgba(84, 84, 88, 0.6);
+  --color-seg: #636366;
+  --color-bar: rgba(22, 22, 24, 0.88);
+  --color-brass-200: #409cff;
+  --color-brass-300: #409cff;
+  --color-brass-400: #409cff;
+  --color-brass-500: #0a84ff;
+  --color-brass-600: #0071e3;
+  --color-azure-400: #64d2ff;
+  --color-emerald-200: #30d158;
+  --color-emerald-300: #30d158;
+  --color-emerald-400: #30d158;
+  --color-emerald-500: #30d158;
+  --color-emerald-600: #248a3d;
+  --color-emerald-950: #0b2a14;
+  --color-red-200: #ff6961;
+  --color-red-300: #ff6961;
+  --color-red-400: #ff6961;
+  --color-red-950: #3a0e0e;
+  --color-rose-200: #ff6961;
+  --color-rose-300: #ff6961;
+  --color-rose-400: #ff375f;
+  --color-amber-300: #ffb340;
+  --color-orange-300: #ffb340;
+  --color-orange-400: #ffb340;
+  --color-orange-500: #ff9f0a;
+  --color-violet-400: #bf5af2;
+  --color-ok: #30d158;
+  --color-bad: #ff453a;
+  --color-coral-300: #ff9f0a;
+  --color-coral-400: #ff9f0a;
+  --color-coral-500: #ff9f0a;
+  }
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme='system'] {
+    color-scheme: dark;
+  }
 }
 
 html,
 body {
-  background: #120f1d;
-  color: #f4f0fa;
+  background: var(--color-ink-950);
+  color: var(--color-slate-100);
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
 }
 
 body {
   font-family: var(--font-sans);
-  font-weight: 500;
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
-  background:
-    radial-gradient(900px 520px at 0% -120px, rgba(255, 166, 77, 0.16), transparent 62%),
-    radial-gradient(760px 520px at 110% 8%, rgba(167, 139, 250, 0.16), transparent 60%),
-    radial-gradient(900px 600px at 40% 115%, rgba(45, 212, 191, 0.1), transparent 60%),
-    #120f1d;
-  background-attachment: fixed;
+  letter-spacing: -0.005em;
 }
 
 .font-mono,
@@ -83,8 +223,7 @@ body {
 
 .font-display {
   font-family: var(--font-display);
-  font-variation-settings: 'SOFT' 100;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 #root {
@@ -110,78 +249,68 @@ body {
 
 @layer components {
 .card {
-  background: linear-gradient(160deg, rgba(52, 44, 78, 0.72), rgba(30, 25, 46, 0.78));
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 1.45rem;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.06) inset,
-    0 20px 40px -24px rgba(6, 3, 16, 0.9);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+  background: var(--color-card);
+  border-radius: 1.125rem;
 }
 
 .brass-text {
-  background: linear-gradient(120deg, #ffe1a6 0%, #ffad33 50%, #ff7a59 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.steel-gradient {
-  background: linear-gradient(180deg, #cbd5e1, #64748b);
+  color: var(--color-brass-500);
 }
 
 input[type='range'].slider {
   -webkit-appearance: none;
   appearance: none;
-  height: 8px;
+  height: 4px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--color-fill-strong);
   outline: none;
 }
 input[type='range'].slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   border-radius: 999px;
-  background: radial-gradient(circle at 35% 30%, #fff1cf, #ffb547 55%, #f07a22);
-  border: 3px solid #1a1628;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
+  background: #fff;
+  border: 0;
+  box-shadow: 0 0.5px 4px rgba(0, 0, 0, 0.12), 0 6px 13px rgba(0, 0, 0, 0.12), 0 0.5px 1px rgba(0, 0, 0, 0.1);
   cursor: pointer;
 }
 input[type='range'].slider::-moz-range-thumb {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   border-radius: 999px;
-  background: radial-gradient(circle at 35% 30%, #fff1cf, #ffb547 55%, #f07a22);
-  border: 3px solid #1a1628;
+  background: #fff;
+  border: 0;
+  box-shadow: 0 0.5px 4px rgba(0, 0, 0, 0.12), 0 6px 13px rgba(0, 0, 0, 0.12);
   cursor: pointer;
 }
 
+/* 16px minimum keeps iOS Safari from zooming into focused inputs */
 .field {
   width: 100%;
-  background: rgba(12, 9, 22, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 1rem;
-  padding: 0.65rem 0.9rem;
-  color: #f4f0fa;
-  font-size: 0.95rem;
-  font-weight: 600;
+  background: var(--color-fill);
+  border: 0;
+  border-radius: 0.65rem;
+  padding: 0.6rem 0.8rem;
+  color: var(--color-slate-50);
+  font-size: 16px;
+  font-weight: 400;
   outline: none;
-  transition: border-color 0.15s, background-color 0.15s;
+  transition: box-shadow 0.15s;
 }
 .field:focus {
-  border-color: #ffad33;
-  background: rgba(12, 9, 22, 0.6);
+  box-shadow: 0 0 0 2px var(--color-brass-500);
+}
+.field::placeholder {
+  color: var(--color-slate-500);
 }
 select.field {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23aaa1bd' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8a8e' stroke-width='2.5'%3E%3Cpath d='M7 15l5 5 5-5M7 9l5-5 5 5'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 0.75rem center;
+  background-position: right 0.7rem center;
   padding-right: 2rem;
 }
-
 }
 
 @keyframes binding-glow {

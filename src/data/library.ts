@@ -1,4 +1,6 @@
 import type { Mechanism, PinType, ToolProfile } from '../types';
+import type { IconName } from '../components/Icon';
+import type { GlossaryArtId } from '../components/svg/Diagrams';
 
 export interface ToolGuide {
   profile: ToolProfile;
@@ -348,29 +350,29 @@ export const SECURITY_PINS: SecurityPinGuide[] = [
   },
 ];
 
-export const GLOSSARY: { term: string; def: string }[] = [
-  { term: 'Shear Line (střižná rovina)', def: 'Rozhraní mezi bubínkem a tělem zámku. Když na ní leží všechna rozhraní stavítek, bubínek se otočí.' },
-  { term: 'Plug (bubínek)', def: 'Otočná část zámku, do které se zasouvá klíč.' },
-  { term: 'Shell / Housing (tělo)', def: 'Pevná vnější část zámku, ve které se bubínek otáčí.' },
-  { term: 'Key pin (spodní stavítko)', def: 'Stavítko, které se dotýká klíče. Různé délky = bitting.' },
-  { term: 'Driver pin (horní stavítko)', def: 'Stavítko tlačené pružinou, které blokuje otočení bubínku.' },
-  { term: 'Binding pin', def: 'Stavítko, které je pod napětím jako první sevřené kvůli výrobním tolerancím.' },
-  { term: 'Binding order', def: 'Pořadí, ve kterém stavítka tuhnou. Pro každý zámek (a směr otáčení) je jiné.' },
-  { term: 'Set', def: 'Stavítko zvednuté na střižnou rovinu – driver sedí na hraně bubínku.' },
-  { term: 'Overset (přemačknutí)', def: 'Key pin zvednutý nad střižnou rovinu – zasekne se v těle zámku. Nutné povolit napětí.' },
-  { term: 'False set', def: 'Výrazné pootočení bubínku způsobené bezpečnostním stavítkem (spool), zámek ale ještě není otevřený.' },
-  { term: 'Counter-rotation', def: 'Zpětný tlak bubínku na napínák při zvedání spool stavítka z false setu.' },
-  { term: 'Bitting', def: 'Kombinace výšek zářezů klíče / délek key pinů.' },
-  { term: 'Keyway (profil)', def: 'Tvar klíčové dírky. Paracentrický profil má výstupky přes střed, což ztěžuje přístup.' },
-  { term: 'Warding', def: 'Výstupky v klíčové dírce, které omezují, jaký nástroj projde.' },
-  { term: 'TOK / BOK', def: 'Top / Bottom Of Keyway – pozice napínáku nahoře nebo dole v klíčové dírce.' },
-  { term: 'SPP', def: 'Single Pin Picking – otevírání stavítko po stavítku.' },
-  { term: 'Raking', def: 'Rychlé zametání více stavítek najednou, spoléhá na štěstí a tolerance.' },
-  { term: 'Bumping', def: 'Úder do speciálně zbroušeného klíče, impuls na okamžik oddělí stavítka.' },
-  { term: 'Gutting', def: 'Rozebrání zámku za účelem prozkoumání (a přepinování) jeho vnitřku.' },
-  { term: 'Repinning', def: 'Výměna stavítek v zámku – tvorba vlastních tréninkových kombinací.' },
-  { term: 'Sidebar', def: 'Boční lišta, která musí zapadnout do výřezů – další vrstva zabezpečení.' },
-  { term: 'Belt ranking', def: 'Komunitní systém obtížnosti zámků od bílého po černý pás.' },
+export const GLOSSARY: { term: string; def: string; art: GlossaryArtId }[] = [
+  { term: 'Shear Line (střižná rovina)', def: 'Rozhraní mezi bubínkem a tělem zámku. Když na ní leží všechna rozhraní stavítek, bubínek se otočí.', art: 'shear' },
+  { term: 'Plug (bubínek)', def: 'Otočná část zámku, do které se zasouvá klíč.', art: 'plug' },
+  { term: 'Shell / Housing (tělo)', def: 'Pevná vnější část zámku, ve které se bubínek otáčí.', art: 'shell' },
+  { term: 'Key pin (spodní stavítko)', def: 'Stavítko, které se dotýká klíče. Různé délky = bitting.', art: 'keypin' },
+  { term: 'Driver pin (horní stavítko)', def: 'Stavítko tlačené pružinou, které blokuje otočení bubínku.', art: 'driver' },
+  { term: 'Binding pin', def: 'Stavítko, které je pod napětím jako první sevřené kvůli výrobním tolerancím.', art: 'binding' },
+  { term: 'Binding order', def: 'Pořadí, ve kterém stavítka tuhnou. Pro každý zámek (a směr otáčení) je jiné.', art: 'order' },
+  { term: 'Set', def: 'Stavítko zvednuté na střižnou rovinu – driver sedí na hraně bubínku.', art: 'set' },
+  { term: 'Overset (přemačknutí)', def: 'Key pin zvednutý nad střižnou rovinu – zasekne se v těle zámku. Nutné povolit napětí.', art: 'overset' },
+  { term: 'False set', def: 'Výrazné pootočení bubínku způsobené bezpečnostním stavítkem (spool), zámek ale ještě není otevřený.', art: 'falseset' },
+  { term: 'Counter-rotation', def: 'Zpětný tlak bubínku na napínák při zvedání spool stavítka z false setu.', art: 'counter' },
+  { term: 'Bitting', def: 'Kombinace výšek zářezů klíče / délek key pinů.', art: 'bitting' },
+  { term: 'Keyway (profil)', def: 'Tvar klíčové dírky. Paracentrický profil má výstupky přes střed, což ztěžuje přístup.', art: 'keyway' },
+  { term: 'Warding', def: 'Výstupky v klíčové dírce, které omezují, jaký nástroj projde.', art: 'warding' },
+  { term: 'TOK / BOK', def: 'Top / Bottom Of Keyway – pozice napínáku nahoře nebo dole v klíčové dírce.', art: 'tokbok' },
+  { term: 'SPP', def: 'Single Pin Picking – otevírání stavítko po stavítku.', art: 'spp' },
+  { term: 'Raking', def: 'Rychlé zametání více stavítek najednou, spoléhá na štěstí a tolerance.', art: 'raking' },
+  { term: 'Bumping', def: 'Úder do speciálně zbroušeného klíče, impuls na okamžik oddělí stavítka.', art: 'bumping' },
+  { term: 'Gutting', def: 'Rozebrání zámku za účelem prozkoumání (a přepinování) jeho vnitřku.', art: 'gutting' },
+  { term: 'Repinning', def: 'Výměna stavítek v zámku – tvorba vlastních tréninkových kombinací.', art: 'repinning' },
+  { term: 'Sidebar', def: 'Boční lišta, která musí zapadnout do výřezů – další vrstva zabezpečení.', art: 'sidebar' },
+  { term: 'Belt ranking', def: 'Komunitní systém obtížnosti zámků od bílého po černý pás.', art: 'belts' },
 ];
 
 /* ─────────────────────────── Law & ethics ─────────────────────────── */
@@ -387,7 +389,7 @@ export const LAW_UPDATED = 'listopad 2026';
 
 export const LAW_CZ: LawSection = {
   title: 'Česká republika',
-  flag: '🇨🇿',
+  flag: 'CZ',
   status: 'ok',
   statusLabel: 'Vlastnictví legální',
   points: [
@@ -403,14 +405,14 @@ export const LAW_CZ: LawSection = {
 export const LAW_WORLD: LawSection[] = [
   {
     title: 'Slovensko',
-    flag: '🇸🇰',
+    flag: 'SK',
     status: 'ok',
     statusLabel: 'Vlastnictví legální',
     points: ['Podobně jako v ČR: držení není trestné, postihuje se zneužití (krádež, porušování domovní svobody).'],
   },
   {
     title: 'Německo, Rakousko, Polsko, Nizozemsko',
-    flag: '🇪🇺',
+    flag: 'EU',
     status: 'ok',
     statusLabel: 'Vlastnictví legální',
     points: [
@@ -420,7 +422,7 @@ export const LAW_WORLD: LawSection[] = [
   },
   {
     title: 'Velká Británie a Irsko',
-    flag: '🇬🇧',
+    flag: 'UK',
     status: 'caution',
     statusLabel: 'Pozor na nošení venku',
     points: [
@@ -430,7 +432,7 @@ export const LAW_WORLD: LawSection[] = [
   },
   {
     title: 'USA',
-    flag: '🇺🇸',
+    flag: 'US',
     status: 'caution',
     statusLabel: 'Liší se podle státu',
     points: [
@@ -440,7 +442,7 @@ export const LAW_WORLD: LawSection[] = [
   },
   {
     title: 'Japonsko',
-    flag: '🇯🇵',
+    flag: 'JP',
     status: 'restricted',
     statusLabel: 'Výrazně omezeno',
     points: [
@@ -449,7 +451,7 @@ export const LAW_WORLD: LawSection[] = [
   },
   {
     title: 'Letadla a cestování',
-    flag: '✈️',
+    flag: 'plane',
     status: 'caution',
     statusLabel: 'Raději do kufru',
     points: [
@@ -463,59 +465,71 @@ export interface EthicsRule {
   title: string;
   text: string;
   golden?: boolean;
-  icon: string;
+  icon: IconName;
+  /** iOS system colour for the icon tile */
+  color: string;
 }
 
 export const ETHICS: EthicsRule[] = [
   {
     golden: true,
-    icon: '🔑',
+    icon: 'key',
+    color: '#FF9500',
     title: 'Otevírej jen to, co je tvoje',
     text: 'Nikdy neotevírej zámek, který nevlastníš, nebo ke kterému nemáš výslovný souhlas majitele. Ani „jen na zkoušku“, ani u kamaráda bez jeho svolení.',
   },
   {
     golden: true,
-    icon: '🚪',
+    icon: 'door',
+    color: '#FF3B30',
     title: 'Nikdy zámek, který je v provozu',
     text: 'Neotevírej zámek, který je aktuálně nainstalovaný a něco chrání (dveře, brány, kola, schránky) – ani když je tvůj. Picking může zámek poškodit (vylomené stavítko, poškrábaný bubínek) a ten pak přestane spolehlivě fungovat nebo selže v nejhorší chvíli.',
   },
   {
-    icon: '🧪',
+    icon: 'flask',
+    color: '#30B0C7',
     title: 'Trénuj na tréninkových zámcích',
     text: 'Používej zámky určené k tréninku: průhledné akrylové, přepinovatelné (repinnable) vložky, progresivní sady nebo zámky koupené speciálně pro locksport. Nikdy nepoužívej zámek, jehož selhání by ohrozilo bezpečí tvoje nebo jiných.',
   },
   {
-    icon: '🆘',
+    icon: 'lifebuoy',
+    color: '#FF2D55',
     title: 'Nejsi záchranná služba',
     text: 'Když tě někdo poprosí, ať mu otevřeš „zabouchnuté dveře“, odmítni a doporuč profesionálního zámečníka. Nemůžeš ověřit, že byt opravdu patří jemu, a zároveň bys mohl zámek poškodit a nést za to odpovědnost.',
   },
   {
-    icon: '🤐',
+    icon: 'eyeOff',
+    color: '#5856D6',
     title: 'Odpovědné sdílení (Responsible Disclosure)',
     text: 'Když objevíš vážnou slabinu konkrétního modelu, nejdřív kontaktuj výrobce a dej mu čas na opravu, než to zveřejníš. Nikdy nepublikuj informace, které by umožnily otevřít konkrétní zámek konkrétní osoby (fotky klíčů, kódy, bitting cizích zámků).',
   },
   {
-    icon: '🎓',
+    icon: 'school',
+    color: '#007AFF',
     title: 'Uč dál, ale s rozmyslem',
     text: 'Locksport je o vzdělávání – ukazuj lidem, jak fungují zámky a proč investovat do kvalitních. Neuč techniky někoho, kdo dává najevo, že je chce zneužít.',
   },
   {
-    icon: '👜',
+    icon: 'bag',
+    color: '#A2845E',
     title: 'Nástroje nos rozumně',
     text: 'Planžety nos jen tam, kam je potřebuješ (sraz, přednáška), v pouzdře. Nikdy je nevytahuj u cizích zámků na veřejnosti – i nevinná „ukázka“ na kole souseda může vypadat jako pokus o krádež.',
   },
   {
-    icon: '🤝',
+    icon: 'users',
+    color: '#34C759',
     title: 'Respektuj zámečníky a komunitu',
     text: 'Zámečníci jsou profesionálové s odpovědností a oprávněním. Nenabízej jejich služby „načerno“. Na fórech a srazech buď vstřícný k začátečníkům a uváděj zdroje.',
   },
   {
-    icon: '🛠️',
+    icon: 'wrench',
+    color: '#8E8E93',
     title: 'Neničit, ale rozumět',
     text: 'Cílem je zámek otevřít bez poškození a pochopit ho. Destruktivní metody (vrtání, lámání vložek) patří jen na vlastní vyřazené zámky a jen pro studijní účely.',
   },
   {
-    icon: '⚖️',
+    icon: 'scale',
+    color: '#AF52DE',
     title: 'Znej zákony',
     text: 'Ověř si legislativu země, kde se nacházíš – zvlášť při cestování. Neznalost zákona neomlouvá.',
   },

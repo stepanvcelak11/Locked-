@@ -209,7 +209,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       },
       resetData: (withSamples) => {
         firstBadgeCheck.current = true;
-        setData({ ...createDefaultData(withSamples, withSamples), ethicsAccepted: true });
+        // keep the user's preferences (appearance, sound…) – only the records are reset
+        setData((d) => ({ ...createDefaultData(withSamples, withSamples), settings: d.settings, ethicsAccepted: true }));
       },
     }),
     [data, tab, intent, toasts, navigate, toast],

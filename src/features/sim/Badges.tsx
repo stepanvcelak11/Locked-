@@ -1,13 +1,14 @@
 import { motion } from 'framer-motion';
 import { BADGES } from '../../lib/badges';
 import { useStore } from '../../store/AppStore';
-import { Card, ProgressBar } from '../../components/ui';
+import { Card, IconTile, ProgressBar } from '../../components/ui';
+import { Icon } from '../../components/Icon';
 import { formatDate } from '../../lib/format';
 
 const TIER = {
-  bronze: 'from-amber-700 to-amber-900 ring-amber-600/60',
-  silver: 'from-slate-300 to-slate-500 ring-slate-300/60',
-  gold: 'from-brass-300 to-brass-600 ring-brass-400/70',
+  bronze: 'linear-gradient(145deg,#d7a47a,#a0663f)',
+  silver: 'linear-gradient(145deg,#e4e4ea,#9a9aa3)',
+  gold: 'linear-gradient(145deg,#ffd86b,#f0a100)',
 };
 
 export function Badges() {
@@ -24,7 +25,7 @@ export function Badges() {
               <span className="text-slate-500">/{BADGES.length}</span>
             </div>
           </div>
-          <div className="text-4xl">🏅</div>
+          <IconTile icon="medal" color="#FF9500" size={48} />
         </div>
         <div className="mt-2">
           <ProgressBar value={earned} max={BADGES.length} />
@@ -37,13 +38,16 @@ export function Badges() {
           return (
             <motion.div key={b.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.02 }}>
               <Card className={`h-full p-3 text-center ${at ? '' : 'opacity-60'}`}>
-                <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br text-2xl ring-2 ${at ? TIER[b.tier] : 'from-slate-800 to-slate-900 ring-edge grayscale'}`}>
-                  <span className={at ? '' : 'opacity-40'}>{b.icon}</span>
+                <div
+                  className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full ${at ? 'text-white shadow-[inset_0_-3px_0_rgba(0,0,0,0.12)]' : 'bg-fill text-slate-500'}`}
+                  style={at ? { background: TIER[b.tier] } : undefined}
+                >
+                  <Icon name={b.icon} size={26} strokeWidth={2.2} />
                 </div>
                 <div className="mt-2 text-sm font-semibold text-slate-100">{b.title}</div>
                 <div className="mt-0.5 text-[11px] leading-snug text-slate-400">{b.desc}</div>
                 {at ? (
-                  <div className="mt-2 text-[10px] text-brass-400">{formatDate(at, false)}</div>
+                  <div className="mt-2 text-[11px] text-slate-400">{formatDate(at, false)}</div>
                 ) : (
                   t > 1 && (
                     <div className="mt-2">

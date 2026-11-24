@@ -1,10 +1,11 @@
+import type { IconName } from '../components/Icon';
 import type { AppData } from '../types';
 import { effectiveTime, bestAverage } from './stats';
 import { beltRank } from '../data/labels';
 
 export interface BadgeDef {
   id: string;
-  icon: string;
+  icon: IconName;
   title: string;
   desc: string;
   tier: 'bronze' | 'silver' | 'gold';
@@ -28,12 +29,12 @@ function drillStreak(d: AppData): number {
 }
 
 export const BADGES: BadgeDef[] = [
-  { id: 'first-open', icon: '🔓', title: 'První otevření', desc: 'Zaznamenej první otevřený zámek.', tier: 'bronze', progress: (d) => [Math.min(1, solvedCount(d)), 1] },
-  { id: 'ten-opens', icon: '🔟', title: 'Rozjetý', desc: '10 otevření ve stopkách.', tier: 'bronze', progress: (d) => [Math.min(10, solvedCount(d)), 10] },
-  { id: 'hundred-opens', icon: '💯', title: 'Stovka', desc: '100 otevření ve stopkách.', tier: 'gold', progress: (d) => [Math.min(100, solvedCount(d)), 100] },
+  { id: 'first-open', icon: 'unlock', title: 'První otevření', desc: 'Zaznamenej první otevřený zámek.', tier: 'bronze', progress: (d) => [Math.min(1, solvedCount(d)), 1] },
+  { id: 'ten-opens', icon: 'hash', title: 'Rozjetý', desc: '10 otevření ve stopkách.', tier: 'bronze', progress: (d) => [Math.min(10, solvedCount(d)), 10] },
+  { id: 'hundred-opens', icon: 'hundred', title: 'Stovka', desc: '100 otevření ve stopkách.', tier: 'gold', progress: (d) => [Math.min(100, solvedCount(d)), 100] },
   {
     id: 'sub-10',
-    icon: '⚡',
+    icon: 'zap',
     title: 'Pod 10 sekund',
     desc: 'Otevři reálný zámek za méně než 10 s.',
     tier: 'silver',
@@ -41,7 +42,7 @@ export const BADGES: BadgeDef[] = [
   },
   {
     id: 'ao5-30',
-    icon: '📈',
+    icon: 'trend',
     title: 'Konzistence',
     desc: 'Ao5 pod 30 sekund na jednom zámku.',
     tier: 'silver',
@@ -56,7 +57,7 @@ export const BADGES: BadgeDef[] = [
   },
   {
     id: 'green-belt',
-    icon: '🟢',
+    icon: 'medal',
     title: 'Zelený pás',
     desc: 'Otevři zámek zeleného pásu nebo vyššího.',
     tier: 'silver',
@@ -71,7 +72,7 @@ export const BADGES: BadgeDef[] = [
   },
   {
     id: 'blue-belt',
-    icon: '🔵',
+    icon: 'medal',
     title: 'Modrý pás',
     desc: 'Otevři zámek modrého pásu nebo vyššího.',
     tier: 'gold',
@@ -84,12 +85,12 @@ export const BADGES: BadgeDef[] = [
         }),
       ),
   },
-  { id: 'collector', icon: '🗃️', title: 'Sběratel', desc: 'Měj ve sbírce 10 zámků.', tier: 'silver', progress: (d) => [Math.min(10, d.locks.length), 10] },
-  { id: 'arsenal', icon: '🧰', title: 'Arzenál', desc: 'Měj v arzenálu 10 nástrojů.', tier: 'bronze', progress: (d) => [Math.min(10, d.tools.length), 10] },
-  { id: 'sim-first', icon: '🧪', title: 'Virtuální průlom', desc: 'Otevři první zámek v simulátoru.', tier: 'bronze', progress: (d) => [Math.min(1, sims(d).length), 1] },
+  { id: 'collector', icon: 'archive', title: 'Sběratel', desc: 'Měj ve sbírce 10 zámků.', tier: 'silver', progress: (d) => [Math.min(10, d.locks.length), 10] },
+  { id: 'arsenal', icon: 'toolbox', title: 'Arzenál', desc: 'Měj v arzenálu 10 nástrojů.', tier: 'bronze', progress: (d) => [Math.min(10, d.tools.length), 10] },
+  { id: 'sim-first', icon: 'flask', title: 'Virtuální průlom', desc: 'Otevři první zámek v simulátoru.', tier: 'bronze', progress: (d) => [Math.min(1, sims(d).length), 1] },
   {
     id: 'sim-blind',
-    icon: '🙈',
+    icon: 'eyeOff',
     title: 'Slepý mistr',
     desc: 'Otevři 6pinový zámek v Blind módu.',
     tier: 'gold',
@@ -97,7 +98,7 @@ export const BADGES: BadgeDef[] = [
   },
   {
     id: 'sim-feather',
-    icon: '🪶',
+    icon: 'feather',
     title: 'Pírko',
     desc: 'Otevři 5pinový zámek s napětím max. 25 %.',
     tier: 'silver',
@@ -105,7 +106,7 @@ export const BADGES: BadgeDef[] = [
   },
   {
     id: 'quiz-perfect',
-    icon: '🧠',
+    icon: 'brain',
     title: 'Encyklopedie',
     desc: 'Odpověz 10/10 v poznávačce.',
     tier: 'gold',
@@ -113,7 +114,7 @@ export const BADGES: BadgeDef[] = [
   },
   {
     id: 'gauntlet-s',
-    icon: '🏆',
+    icon: 'trophy',
     title: 'Trojboj S',
     desc: 'Získej hodnocení S v 3-Lock Gauntletu.',
     tier: 'gold',
@@ -121,17 +122,17 @@ export const BADGES: BadgeDef[] = [
   },
   {
     id: 'gauntlet-first',
-    icon: '🥉',
+    icon: 'flag',
     title: 'Gladiátor',
     desc: 'Dokonči první 3-Lock Gauntlet.',
     tier: 'bronze',
     progress: (d) => bool(d.challenges.some((c) => c.kind === 'gauntlet' && !c.dnf)),
   },
-  { id: 'drill-streak-3', icon: '🔥', title: 'Na vlně', desc: 'Plň denní drily 3 dny v řadě.', tier: 'bronze', progress: (d) => [Math.min(3, drillStreak(d)), 3] },
-  { id: 'drill-streak-7', icon: '🌋', title: 'Týden disciplíny', desc: 'Plň denní drily 7 dní v řadě.', tier: 'gold', progress: (d) => [Math.min(7, drillStreak(d)), 7] },
+  { id: 'drill-streak-3', icon: 'flame', title: 'Na vlně', desc: 'Plň denní drily 3 dny v řadě.', tier: 'bronze', progress: (d) => [Math.min(3, drillStreak(d)), 3] },
+  { id: 'drill-streak-7', icon: 'mountain', title: 'Týden disciplíny', desc: 'Plň denní drily 7 dní v řadě.', tier: 'gold', progress: (d) => [Math.min(7, drillStreak(d)), 7] },
   {
     id: 'mapper',
-    icon: '🗺️',
+    icon: 'map',
     title: 'Kartograf',
     desc: 'Zaznamenej kompletní binding order u 3 zámků.',
     tier: 'silver',

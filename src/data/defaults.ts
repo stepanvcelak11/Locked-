@@ -17,6 +17,7 @@ export const defaultSettings: Settings = {
   hideTimeWhileRunning: false,
   simDifficulty: 'normal',
   showBindingHint: true,
+  theme: 'light',
 };
 
 export function seedLocks(now = Date.now()): LockItem[] {

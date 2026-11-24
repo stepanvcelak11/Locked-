@@ -3,9 +3,10 @@ import { useMemo } from 'react';
 import { DRILLS, simDrillProgress, type DrillDef } from '../../data/drills';
 import { useStore } from '../../store/AppStore';
 import { hashString, mulberry32, shuffle, todayKey } from '../../lib/random';
-import { Button, Card, ProgressBar, SectionTitle } from '../../components/ui';
+import { Button, Card, ProgressBar, SectionTitle, IconTile } from '../../components/ui';
 import { drillStreak } from '../../lib/badges';
 import { Icon } from '../../components/Icon';
+import { IOS } from '../../lib/colors';
 import { effectiveTime } from '../../lib/stats';
 
 export function dailyDrills(day = todayKey()): DrillDef[] {
@@ -55,17 +56,17 @@ export function Drills() {
     <div>
       <div className="grid grid-cols-3 gap-2">
         <div className="card p-3 text-center">
-          <div className="text-2xl">🔥</div>
+          <IconTile icon="flame" color={IOS.red} size={34} />
           <div className="font-mono text-lg font-bold">{streak}</div>
           <div className="text-xs text-slate-500">dní v řadě</div>
         </div>
         <div className="card p-3 text-center">
-          <div className="text-2xl">✅</div>
+          <IconTile icon="check" color={IOS.green} size={34} />
           <div className="font-mono text-lg font-bold">{drills.filter((d) => progress(d)[0] >= progress(d)[1]).length}/3</div>
           <div className="text-xs text-slate-500">dnes</div>
         </div>
         <div className="card p-3 text-center">
-          <div className="text-2xl">⭐</div>
+          <IconTile icon="star" color={IOS.orange} size={34} />
           <div className="font-mono text-lg font-bold">{totalXp}</div>
           <div className="text-xs text-slate-500">XP celkem</div>
         </div>
@@ -82,7 +83,7 @@ export function Drills() {
             <motion.div key={d.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
               <Card className={`p-4 ${complete ? 'border-ok/50' : ''}`}>
                 <div className="flex gap-3">
-                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl ${complete ? 'bg-ok/15' : 'bg-black/25'}`}>{complete ? '✅' : d.icon}</div>
+                  <IconTile icon={complete ? 'check' : d.icon} color={complete ? IOS.green : IOS.blue} size={44} />
                   <div className="flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <div>
@@ -128,10 +129,10 @@ export function Drills() {
       </div>
 
       <SectionTitle>Všechna cvičení</SectionTitle>
-      <Card className="divide-y divide-white/[0.06]">
+      <Card className="divide-y divide-sep">
         {DRILLS.map((d) => (
           <button key={d.id} className="flex w-full items-center gap-3 px-4 py-3 text-left" onClick={() => launch(d)}>
-            <span className="text-xl">{d.icon}</span>
+            <IconTile icon={d.icon} color={IOS.blue} />
             <span className="flex-1">
               <span className="block text-sm text-slate-100">{d.title}</span>
               <span className="block text-xs text-slate-500">{d.focus}</span>

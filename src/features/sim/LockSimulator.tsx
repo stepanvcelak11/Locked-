@@ -1,3 +1,5 @@
+import { IOS } from '../../lib/colors';
+import { IconTile } from '../../components/ui';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LockEngine, SIM_TOOLS, type SimEvent, type SimSnapshot, type ToolKind, KEYWAY_FLOOR } from './engine';
@@ -17,9 +19,9 @@ export interface SimOpenResult {
 }
 
 const PRESETS = [
-  { id: 'light', label: 'Light', value: 0.22 },
-  { id: 'medium', label: 'Medium', value: 0.45 },
-  { id: 'heavy', label: 'Heavy', value: 0.8 },
+  { id: 'light', label: 'Lehké', value: 0.22 },
+  { id: 'medium', label: 'Střední', value: 0.45 },
+  { id: 'heavy', label: 'Silné', value: 0.8 },
 ] as const;
 
 export function LockSimulator({
@@ -316,7 +318,7 @@ export function LockSimulator({
               key={p.id}
               onClick={() => setTension(p.value)}
               className={`rounded-xl border px-2 py-2 text-xs font-semibold transition ${
-                Math.abs(tension - p.value) < 0.02 ? 'border-brass-500 bg-brass-500/15 text-brass-300' : 'border-white/10 text-steel-400 hover:text-slate-100'
+                Math.abs(tension - p.value) < 0.02 ? 'border-brass-500 bg-brass-500/15 text-brass-300' : 'border-sep text-steel-400 hover:text-slate-100'
               }`}
             >
               {p.label}
@@ -333,7 +335,7 @@ export function LockSimulator({
                 key={k}
                 onClick={() => setTool(k)}
                 className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium ${
-                  tool === k ? 'border-azure-400 bg-azure-400/10 text-azure-400' : 'border-white/10 text-steel-400'
+                  tool === k ? 'border-azure-400 bg-azure-400/10 text-azure-400' : 'border-sep text-steel-400'
                 }`}
               >
                 {SIM_TOOLS[k].label}
@@ -353,8 +355,8 @@ export function LockSimulator({
         {result && !compact && (
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="card mt-3 border-ok/50 p-4">
             <div className="flex items-center gap-3">
-              <motion.div initial={{ rotate: -20, scale: 0.5 }} animate={{ rotate: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 10 }} className="text-3xl">
-                🔓
+              <motion.div initial={{ rotate: -20, scale: 0.5 }} animate={{ rotate: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 10 }} className="flex">
+                <IconTile icon="unlock" color={IOS.green} size={44} />
               </motion.div>
               <div className="flex-1">
                 <div className="font-semibold text-emerald-300">Zámek otevřen za {formatTime(result.time)}</div>

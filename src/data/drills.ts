@@ -1,3 +1,4 @@
+import type { IconName } from '../components/Icon';
 import type { AppData, SimLockSpec } from '../types';
 
 export type DrillCheck =
@@ -9,7 +10,7 @@ export type DrillCheck =
 export interface DrillDef {
   id: string;
   title: string;
-  icon: string;
+  icon: IconName;
   focus: string;
   description: string;
   check: DrillCheck;
@@ -20,7 +21,7 @@ export const DRILLS: DrillDef[] = [
   {
     id: 'featherweight',
     title: 'Jemná ruka (Featherweight)',
-    icon: '🪶',
+    icon: 'feather',
     focus: 'Kontrola napětí',
     description: 'Otevři 3 zámky v simulátoru s napětím, které nikdy nepřekročí 35 %.',
     check: { kind: 'sim', pins: 5, blind: false, maxTension: 0.35, count: 3 },
@@ -29,7 +30,7 @@ export const DRILLS: DrillDef[] = [
   {
     id: 'spp-only',
     title: 'Pouze SPP',
-    icon: '🎯',
+    icon: 'target',
     focus: 'Single Pin Picking',
     description: 'Zákaz rake planžet. Otevři 3 reálné zámky stavítko po stavítku – zaznamenej je stopkami s technikou SPP.',
     check: { kind: 'timer', count: 3, technique: 'SPP' },
@@ -38,7 +39,7 @@ export const DRILLS: DrillDef[] = [
   {
     id: 'blind-5',
     title: 'Zámek naslepo',
-    icon: '🙈',
+    icon: 'eyeOff',
     focus: 'Hmatová & zvuková zpětná vazba',
     description: 'Zvládni 5pinový zámek v Blind módu simulátoru do 45 sekund.',
     check: { kind: 'sim', pins: 5, blind: true, timeLimit: 45000, count: 1 },
@@ -47,7 +48,7 @@ export const DRILLS: DrillDef[] = [
   {
     id: 'spool-master',
     title: 'Mistr spoolů',
-    icon: '🧵',
+    icon: 'pin',
     focus: 'False set & counter-rotation',
     description: 'Otevři v simulátoru 5pinový zámek se 3 spool piny.',
     check: { kind: 'sim', pins: 5, blind: false, spools: 3, count: 1 },
@@ -56,7 +57,7 @@ export const DRILLS: DrillDef[] = [
   {
     id: 'serrated-ear',
     title: 'Vroubkované ucho',
-    icon: '👂',
+    icon: 'ear',
     focus: 'Rozlišení mikro-kliknutí',
     description: 'Otevři 4pinový zámek se 2 serrated piny v Blind módu.',
     check: { kind: 'sim', pins: 4, blind: true, serrated: 2, count: 1 },
@@ -65,7 +66,7 @@ export const DRILLS: DrillDef[] = [
   {
     id: 'six-pack',
     title: 'Šestipinová výzva',
-    icon: '🔩',
+    icon: 'layers',
     focus: 'Výdrž',
     description: 'Otevři 6pinový zámek v simulátoru (s 1 spoolem a 1 serrated).',
     check: { kind: 'sim', pins: 6, blind: false, spools: 1, serrated: 1, count: 1 },
@@ -74,7 +75,7 @@ export const DRILLS: DrillDef[] = [
   {
     id: 'speed-3',
     title: 'Rychlá trojka',
-    icon: '⚡',
+    icon: 'zap',
     focus: 'Rychlost',
     description: 'Otevři 3 reálné zámky, každý pod 60 sekund (měř stopkami).',
     check: { kind: 'timer', count: 3, maxTime: 60000 },
@@ -83,7 +84,7 @@ export const DRILLS: DrillDef[] = [
   {
     id: 'rake-session',
     title: 'Raking session',
-    icon: '🧹',
+    icon: 'sliders',
     focus: 'Raking a rocking',
     description: 'Otevři 3 zámky technikou Raking. Zkus Bogotu i City rake a sleduj, co funguje lépe.',
     check: { kind: 'timer', count: 3, technique: 'Raking' },
@@ -92,7 +93,7 @@ export const DRILLS: DrillDef[] = [
   {
     id: 'quiz-sharp',
     title: 'Ostré oko',
-    icon: '🔍',
+    icon: 'search',
     focus: 'Teorie',
     description: 'Dosáhni alespoň 8/10 správných odpovědí v Poznávačce.',
     check: { kind: 'quiz', minCorrect: 8 },
@@ -101,7 +102,7 @@ export const DRILLS: DrillDef[] = [
   {
     id: 'map-binding',
     title: 'Mapa binding orderu',
-    icon: '🗺️',
+    icon: 'map',
     focus: 'Analýza',
     description: 'Vezmi si jeden reálný zámek, zjisti jeho pořadí tuhnutí a typy stavítek a zapiš je v Moje výbava → Sbírka.',
     check: { kind: 'manual' },
@@ -110,7 +111,7 @@ export const DRILLS: DrillDef[] = [
   {
     id: 'reverse-tension',
     title: 'Opačné napětí',
-    icon: '🔄',
+    icon: 'rotate',
     focus: 'Mechanika',
     description: 'Otevři reálný zámek, který obvykle otevíráš po směru, proti směru hodinových ručiček. Binding order se změní!',
     check: { kind: 'manual' },
@@ -119,7 +120,7 @@ export const DRILLS: DrillDef[] = [
   {
     id: 'tok-only',
     title: 'Jen TOK',
-    icon: '⬆️',
+    icon: 'arrowUp',
     focus: 'Napínák nahoře',
     description: 'Otevři 2 reálné zámky výhradně s TOK napínákem. Všimni si, kolik místa navíc má planžeta.',
     check: { kind: 'manual' },
@@ -128,7 +129,7 @@ export const DRILLS: DrillDef[] = [
   {
     id: 'deep-hook',
     title: 'Hluboký hák',
-    icon: '🪝',
+    icon: 'edit',
     focus: 'Extrémní bitting',
     description: 'V simulátoru použij Deep Hook a otevři 6pinový zámek bez jediného přemačknutí.',
     check: { kind: 'sim', pins: 6, blind: false, count: 1, tool: 'deep-hook' },

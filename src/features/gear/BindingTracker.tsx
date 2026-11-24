@@ -35,7 +35,7 @@ export function BindingTracker({
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
+    <div className="rounded-2xl border border-sep bg-well p-3">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-xs font-semibold text-steel-400">Binding Order Tracker</span>
         <span className="text-[10px] text-slate-500">{recording ? 'Klepej na piny v pořadí tuhnutí' : 'Klepnutím změníš typ pinu'}</span>
@@ -51,7 +51,7 @@ export function BindingTracker({
               whileTap={{ scale: 0.92 }}
               onClick={() => (recording ? tapOrder(i) : cycle(i))}
               className={`relative flex flex-col items-center rounded-xl border px-1 pb-1.5 pt-2 transition ${
-                recording && pos < 0 ? 'border-brass-500/70 bg-brass-500/5' : 'border-white/10 bg-white/[0.05]'
+                recording && pos < 0 ? 'border-brass-500/70 bg-brass-500/5' : 'border-sep bg-fill'
               }`}
             >
               <span className="text-[10px] font-mono text-slate-500">#{i}</span>
@@ -63,7 +63,7 @@ export function BindingTracker({
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-brass-500 text-[10px] font-bold text-ink-950"
+                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-brass-500 text-[10px] font-bold text-white"
                 >
                   {pos + 1}
                 </motion.span>
@@ -76,13 +76,13 @@ export function BindingTracker({
         <div className="font-mono text-sm text-brass-300">{order.length ? order.join(' → ') : <span className="text-slate-500">pořadí nezaznamenáno</span>}</div>
         <div className="flex gap-2">
           {order.length > 0 && (
-            <button type="button" className="rounded-lg border border-white/10 px-2.5 py-1 text-xs text-slate-300" onClick={() => onChange(config, [])}>
+            <button type="button" className="rounded-lg border border-sep px-2.5 py-1 text-xs text-slate-300" onClick={() => onChange(config, [])}>
               Vymazat
             </button>
           )}
           <button
             type="button"
-            className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${recording ? 'bg-bad/20 text-red-300' : 'bg-brass-500 text-ink-950'}`}
+            className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${recording ? 'bg-bad/20 text-red-300' : 'bg-brass-500 text-white'}`}
             onClick={() => {
               if (!recording) onChange(config, []);
               setRecording((r) => !r);

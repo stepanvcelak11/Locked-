@@ -136,8 +136,8 @@ export const SimLockView = memo(function SimLockView({ snap, tool, spacing, blin
     <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className="h-full w-full" role="img" aria-label="Řez stavítkovým zámkem">
       <defs>
         <linearGradient id="sv-shell" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor={blind ? '#4b5563' : '#3d3068'} stopOpacity={blind ? 1 : 0.55} />
-          <stop offset="1" stopColor={blind ? '#1f2937' : '#211a3c'} stopOpacity={blind ? 1 : 0.55} />
+          <stop offset="0" stopColor={blind ? '#4b5563' : '#b8bdc9'} stopOpacity={blind ? 1 : 0.55} />
+          <stop offset="1" stopColor={blind ? '#1f2937' : '#8b92a3'} stopOpacity={blind ? 1 : 0.55} />
         </linearGradient>
         <linearGradient id="sv-plug" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#7dd3fc" stopOpacity="0.22" />
@@ -182,7 +182,7 @@ export const SimLockView = memo(function SimLockView({ snap, tool, spacing, blin
 
       <g transform={`translate(${shakeX} 0)`}>
         {/* Shell */}
-        <rect x={PLUG_X0 - 12} y={8} width={PLUG_W + 22} height={PLUG_BOTTOM + 22} rx={14} fill="url(#sv-shell)" stroke="#b69cff" strokeOpacity={0.35} />
+        <rect x={PLUG_X0 - 12} y={8} width={PLUG_W + 22} height={PLUG_BOTTOM + 22} rx={14} fill="url(#sv-shell)" stroke="#8e8e93" strokeOpacity={0.5} />
 
         {/* Plug */}
         <g transform={`translate(${plugShift} 0)`}>
