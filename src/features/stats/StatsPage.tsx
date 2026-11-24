@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useStore } from '../../store/AppStore';
-import { Button, Card, Empty, PageHeader, SectionTitle } from '../../components/ui';
+import { Button, Card, PageHeader, SectionTitle } from '../../components/ui';
 import { Icon, type IconName } from '../../components/Icon';
 import { ToolArt } from '../../components/svg/ToolArt';
 import { effectiveTime, median, rollingAverages, summarize } from '../../lib/stats';
@@ -249,10 +249,27 @@ export function StatsPage() {
   if (!solves.length && !data.challenges.length) {
     return (
       <div>
-        <PageHeader title="Statistiky" />
-        <Empty icon="chart" title="Zatím žádná data">
-          Změř první otevření ve Stopkách a statistiky se začnou plnit.
-        </Empty>
+        <PageHeader title="Statistiky" subtitle="Jak se ti daří a kde máš rezervy" />
+        <Card className="flex flex-col items-center px-6 py-9 text-center">
+          <svg viewBox="0 0 160 90" className="mb-4 w-44" aria-hidden="true">
+            <path d="M10 78H150" stroke="var(--color-slate-700)" strokeWidth="2" strokeLinecap="round" />
+            {[18, 30, 24, 44, 38, 56].map((h, i) => (
+              <rect key={i} x={20 + i * 21} y={78 - h} width="13" height={h} rx="5" fill={i === 5 ? 'var(--color-brass-500)' : 'var(--color-slate-700)'} opacity={i === 5 ? 1 : 0.55 + i * 0.07} />
+            ))}
+            <circle cx="132" cy="14" r="9" fill="var(--color-brass-400)" opacity="0.25" />
+            <path d="M128 14l3 3 6-6" stroke="var(--color-brass-500)" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <div className="font-display text-xl font-semibold text-slate-50">Tady bude vidět tvůj pokrok</div>
+          <p className="mt-1.5 max-w-xs text-sm text-slate-400">
+            Zatím jsi nic neměřil. Jakmile otevřeš první zámek se stopkami nebo zahraješ hru, začnou se tu objevovat tvoje rekordy, průměry a série.
+          </p>
+          <Button variant="brass" icon="timer" className="mt-5" onClick={() => navigate('timer')}>
+            Změřit první otevření
+          </Button>
+          <button className="mt-3 text-sm font-bold text-slate-400 hover:text-slate-200" onClick={() => navigate('arcade')}>
+            nebo si zahraj v simulátoru
+          </button>
+        </Card>
       </div>
     );
   }

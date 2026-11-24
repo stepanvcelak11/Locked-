@@ -29,6 +29,12 @@ export function migrate(raw: unknown): AppData {
     throw new Error('Soubor neobsahuje data aplikace Locked.');
   }
   const base = createDefaultData(false);
+  // Older versions auto-filled a fresh install with a fake history. Drop it once (real records are kept).
+  const isSeed = (x: { id?: string }) => typeof x?.id === 'string' && x.id.startsWith('seed-');
+  const cleanDemo = !r.demoCleaned;
+  const solves = r.solves.filter((s) => typeof s?.time === 'number' && !(cleanDemo && isSeed(s)));
+  const challenges = (Array.isArray(r.challenges) ? r.challenges : []).filter((c) => !(cleanDemo && isSeed(c)));
+  const removedDemo = cleanDemo && (solves.length !== r.solves.length || challenges.length !== (r.challenges?.length ?? 0));
   return {
     ...base,
     ...r,
@@ -36,11 +42,13 @@ export function migrate(raw: unknown): AppData {
     ethicsAccepted: !!r.ethicsAccepted,
     locks: r.locks.map((l) => ({ ...l, pinConfig: l.pinConfig ?? [], bindingOrder: l.bindingOrder ?? [], notes: l.notes ?? '', formFactor: l.formFactor ?? 'padlock' })),
     tools: r.tools.map((t) => ({ ...t, notes: t.notes ?? '', position: t.position ?? 'n/a' })),
-    solves: r.solves.filter((s) => typeof s?.time === 'number'),
-    challenges: Array.isArray(r.challenges) ? r.challenges : [],
+    solves,
+    challenges,
     settings: { ...defaultSettings, ...(r.settings ?? {}) },
     timerConfig: { ...base.timerConfig, ...(r.timerConfig ?? {}) },
-    badges: r.badges ?? {},
+    // badges earned only thanks to the demo history are re-evaluated from real data
+    badges: removedDemo ? {} : (r.badges ?? {}),
+    demoCleaned: true,
     drills: r.drills ?? {},
   };
 }

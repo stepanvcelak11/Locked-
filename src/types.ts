@@ -170,6 +170,8 @@ export interface AppData {
   timerConfig: TimerConfig;
   badges: Record<string, number>;
   drills: DrillProgress;
+  /** Set once the old auto-seeded demo history (ids `seed-*`) has been removed. */
+  demoCleaned?: boolean;
 }
 
 /** Simulator lock definition (also derivable from a LockItem). */

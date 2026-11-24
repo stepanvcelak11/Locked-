@@ -214,13 +214,13 @@ function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }
           Smazat vše
         </Button>
         <Button variant="outline" size="sm" onClick={() => setConfirmReset('samples')}>
-          Obnovit ukázková data
+          Vyzkoušet ukázková data
         </Button>
       </div>
       {confirmReset && (
         <div className="mt-3 rounded-xl border border-bad/40 bg-bad/10 p-3 text-sm">
           <p className="mb-2 text-red-200">
-            {confirmReset === 'empty' ? 'Opravdu smazat všechna data? ' : 'Nahradit data ukázkovými? '}
+            {confirmReset === 'empty' ? 'Opravdu smazat všechna data? ' : 'Nahradit tvoje data vymyšlenou ukázkovou historií (časy, hry)? '}
             Tuto akci nelze vrátit – doporučujeme nejdřív export.
           </p>
           <div className="flex gap-2">

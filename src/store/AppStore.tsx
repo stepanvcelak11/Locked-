@@ -209,7 +209,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       },
       resetData: (withSamples) => {
         firstBadgeCheck.current = true;
-        setData({ ...createDefaultData(withSamples), ethicsAccepted: true });
+        setData({ ...createDefaultData(withSamples, withSamples), ethicsAccepted: true });
       },
     }),
     [data, tab, intent, toasts, navigate, toast],

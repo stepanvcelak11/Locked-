@@ -247,15 +247,20 @@ export function seedChallenges(now = Date.now()): ChallengeResult[] {
   ];
 }
 
-export function createDefaultData(withSamples = true): AppData {
+/**
+ * withSamples: starter lock vault + tool arsenal (useful defaults for the timer).
+ * withDemoHistory: fake solves/challenges – only when the user explicitly asks for a demo.
+ */
+export function createDefaultData(withSamples = true, withDemoHistory = false): AppData {
   const now = Date.now();
   return {
     version: DATA_VERSION,
     ethicsAccepted: false,
     locks: withSamples ? seedLocks(now) : [],
     tools: withSamples ? seedTools(now) : [],
-    solves: withSamples ? seedSolves(now) : [],
-    challenges: withSamples ? seedChallenges(now) : [],
+    solves: withDemoHistory ? seedSolves(now) : [],
+    challenges: withDemoHistory ? seedChallenges(now) : [],
+    demoCleaned: true,
     settings: { ...defaultSettings },
     timerConfig: {
       lockId: withSamples ? 'lock-master140' : null,
