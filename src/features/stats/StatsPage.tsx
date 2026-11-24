@@ -1,59 +1,65 @@
-import { useMemo, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, Cell, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { useMemo, useState, type ReactNode } from 'react';
+import { motion } from 'framer-motion';
+import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useStore } from '../../store/AppStore';
-import { BeltBadge, Button, Card, Empty, PageHeader, SectionTitle, Stat } from '../../components/ui';
+import { Button, Card, Empty, PageHeader, SectionTitle } from '../../components/ui';
+import { Icon, type IconName } from '../../components/Icon';
+import { ToolArt } from '../../components/svg/ToolArt';
 import { effectiveTime, median, rollingAverages, summarize } from '../../lib/stats';
-import { formatDate, formatDuration, formatTime } from '../../lib/format';
-import { TECHNIQUES } from '../../data/labels';
-import type { SolveRecord } from '../../types';
+import { formatDate, formatDuration, formatTime, plural } from '../../lib/format';
+import { TECHNIQUES, beltOf } from '../../data/labels';
+import type { Belt, SolveRecord, ToolProfile } from '../../types';
 
-/* Chart palette – validated for the dark surface (#1e293b): blue #3987e5 / amber #d97706 */
+/* Chart palette – validated (dataviz validator, dark mode) against the card surface #262038:
+   blue #3987e5 / amber #d97706 pass lightness band, chroma, CVD (ΔE 27) and contrast. */
 const C_SINGLE = '#3987e5';
 const C_AVG = '#d97706';
-const GRID = '#334155';
-const AXIS = '#94a3b8';
+const GRID = 'rgba(255,255,255,0.06)';
+const AXIS = '#827a97';
+
+const DAY = 86_400_000;
+const dayKey = (t: number) => {
+  const d = new Date(t);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+};
 
 function TimeTooltip({ active, payload }: { active?: boolean; payload?: { payload: { idx: number; date: number; single: number | null; ao5: number | null; note?: string } }[] }) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
   return (
-    <div className="rounded-xl border border-edge bg-ink-950/95 px-3 py-2 text-xs shadow-xl">
+    <div className="rounded-2xl border border-white/10 bg-ink-900/95 px-3.5 py-2.5 text-xs shadow-xl backdrop-blur">
       <div className="mb-1 text-slate-400">
-        #{p.idx} · {formatDate(p.date)}
+        Pokus {p.idx} · {formatDate(p.date)}
       </div>
       <div className="flex items-center gap-2">
-        <span className="h-2 w-2 rounded-full" style={{ background: C_SINGLE }} />
+        <span className="h-2.5 w-2.5 rounded-full" style={{ background: C_SINGLE }} />
         <span className="text-slate-300">Čas</span>
-        <span className="ml-auto font-mono text-slate-50">{p.single === null ? 'DNF' : formatTime(p.single)}</span>
+        <span className="ml-auto pl-4 font-mono font-bold text-slate-50">{p.single === null ? 'DNF' : formatTime(p.single)}</span>
       </div>
       {p.ao5 !== null && (
         <div className="flex items-center gap-2">
-          <span className="h-0.5 w-3" style={{ background: C_AVG }} />
-          <span className="text-slate-300">Ao5</span>
-          <span className="ml-auto font-mono text-slate-50">{formatTime(p.ao5)}</span>
+          <span className="h-[3px] w-3 rounded-full" style={{ background: C_AVG }} />
+          <span className="text-slate-300">Průměr z 5</span>
+          <span className="ml-auto pl-4 font-mono font-bold text-slate-50">{formatTime(p.ao5)}</span>
         </div>
       )}
-      {p.note && <div className="mt-1 max-w-[180px] text-slate-400">📝 {p.note}</div>}
-    </div>
-  );
-}
-
-function CountTooltip({ active, payload }: { active?: boolean; payload?: { payload: { name: string; count: number; sub?: string } }[] }) {
-  if (!active || !payload?.length) return null;
-  const p = payload[0].payload;
-  return (
-    <div className="rounded-xl border border-edge bg-ink-950/95 px-3 py-2 text-xs shadow-xl">
-      <div className="font-semibold text-slate-100">{p.name}</div>
-      <div className="text-slate-300">{p.count}× otevřeno</div>
-      {p.sub && <div className="text-slate-400">{p.sub}</div>}
+      {p.note && <div className="mt-1 max-w-[190px] text-slate-400">📝 {p.note}</div>}
     </div>
   );
 }
 
 const fmtAxis = (v: number) => {
   if (v >= 60000) return `${Math.floor(v / 60000)}:${String(Math.round((v % 60000) / 1000)).padStart(2, '0')}`;
-  return `${Math.round(v / 1000)}s`;
+  return `${Math.round(v / 1000)} s`;
 };
+
+/** "o 12 % rychlejší" / "o 8 % pomalejší" relative to 1.0 */
+function relWords(index: number) {
+  const pct = Math.round(Math.abs(1 - index) * 100);
+  if (pct === 0) return 'přesně tvůj běžný čas';
+  return index < 1 ? `o ${pct} % rychlejší než obvykle` : `o ${pct} % pomalejší než obvykle`;
+}
 
 export function StatsPage() {
   const { data, navigate, setTimerConfig } = useStore();
@@ -66,8 +72,10 @@ export function StatsPage() {
   }, [solves]);
   const [lockId, setLockId] = useState<string | null>(() => lockIds[0] ?? null);
   const [showTable, setShowTable] = useState(false);
+  const [showAllCombos, setShowAllCombos] = useState(false);
+  const lockOf = (id: string | null) => data.locks.find((x) => x.id === id);
   const lockName = (id: string | null) => {
-    const l = data.locks.find((x) => x.id === id);
+    const l = lockOf(id);
     return l ? `${l.brand} ${l.name}` : 'Bez zámku';
   };
 
@@ -91,6 +99,28 @@ export function StatsPage() {
   const ao5 = bestAo(5);
   const ao12 = bestAo(12);
   const pbSolve = solves.filter((s) => Number.isFinite(effectiveTime(s))).sort((a, b) => effectiveTime(a) - effectiveTime(b))[0];
+  const successPct = all.count ? Math.round((all.solved / all.count) * 100) : 0;
+
+  // practice days & streaks
+  const practice = useMemo(() => {
+    const days = new Set(solves.map((s) => dayKey(s.date)));
+    const today = dayKey(Date.now());
+    let current = 0;
+    // a streak survives until the end of today even if you haven't practised yet
+    let d = days.has(today) ? today : today - DAY;
+    while (days.has(d)) {
+      current++;
+      d -= DAY;
+    }
+    const sorted = [...days].sort((a, b) => a - b);
+    let longest = 0;
+    let run = 0;
+    sorted.forEach((t, i) => {
+      run = i > 0 && Math.round((t - sorted[i - 1]) / DAY) === 1 ? run + 1 : 1;
+      longest = Math.max(longest, run);
+    });
+    return { days, current, longest };
+  }, [solves]);
 
   // progress chart data
   const progress = useMemo(() => {
@@ -124,10 +154,16 @@ export function StatsPage() {
     return [...m.entries()]
       .map(([id, count]) => {
         const t = data.tools.find((x) => x.id === id);
-        return { name: t ? t.name : 'Smazaný nástroj', count, sub: t ? `${t.manufacturer} · ${t.thickness}"${t.position !== 'n/a' ? ` · ${t.position}` : ''}` : '' };
+        return {
+          id,
+          name: t ? t.name : 'Smazaný nástroj',
+          profile: (t?.profile ?? 'other') as ToolProfile,
+          count,
+          sub: t ? `${t.manufacturer} · ${t.thickness}"` : '',
+        };
       })
       .sort((a, b) => b.count - a.count)
-      .slice(0, 8);
+      .slice(0, 6);
   }, [solves, data.tools]);
 
   // fastest gear combos, normalised by lock difficulty (time / lock median)
@@ -183,29 +219,26 @@ export function StatsPage() {
   const tech = TECHNIQUES.map((t) => {
     const ss = solves.filter((s) => s.technique === t.id);
     const valid = ss.map(effectiveTime).filter(Number.isFinite);
-    return { name: t.label, count: valid.length, sub: valid.length ? `průměr ${formatTime(valid.reduce((a, b) => a + b, 0) / valid.length)}` : '' };
+    return { name: t.label, count: valid.length, avg: valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : null };
   }).filter((t) => t.count > 0);
+  const techTotal = tech.reduce((a, t) => a + t.count, 0);
 
-  // heatmap (12 weeks)
+  // activity calendar: 12 whole weeks, Monday-first, ending with the current week
   const heat = useMemo(() => {
-    const days = 84;
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    start.setDate(start.getDate() - days + 1);
+    const today = dayKey(Date.now());
+    const dow = (new Date(today).getDay() + 6) % 7; // 0 = Monday
+    const start = today - (dow + 7 * 11) * DAY;
     const counts = new Map<number, number>();
-    solves.forEach((s) => {
-      const d = new Date(s.date);
-      d.setHours(0, 0, 0, 0);
-      counts.set(d.getTime(), (counts.get(d.getTime()) ?? 0) + 1);
-    });
-    const cells: { t: number; c: number }[] = [];
-    for (let i = 0; i < days; i++) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      cells.push({ t: d.getTime(), c: counts.get(d.getTime()) ?? 0 });
+    solves.forEach((s) => counts.set(dayKey(s.date), (counts.get(dayKey(s.date)) ?? 0) + 1));
+    const cells: { t: number; c: number; future: boolean }[] = [];
+    for (let i = 0; i < 84; i++) {
+      // DST-safe: re-normalise each step to local midnight
+      const t = dayKey(start + i * DAY + DAY / 2);
+      cells.push({ t, c: counts.get(t) ?? 0, future: t > today });
     }
     const max = Math.max(1, ...cells.map((c) => c.c));
-    return { cells, max };
+    const active = cells.filter((c) => c.c > 0).length;
+    return { cells, max, active };
   }, [solves]);
 
   // games summary
@@ -224,84 +257,135 @@ export function StatsPage() {
     );
   }
 
+  const progressLock = lockId ? lockOf(lockId) : null;
+
   return (
     <div>
-      <PageHeader title="Statistiky" subtitle={`${all.count} pokusů · ${perLock.length} zámků`} />
+      <PageHeader title="Statistiky" subtitle="Jak se ti daří a kde máš rezervy" />
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        <Stat label="Otevření celkem" value={all.solved} sub={`z ${all.count} pokusů`} />
-        <Stat label="Čas tréninku" value={formatDuration(all.totalTime)} sub="čistý čas na stopkách" />
-        <Stat label="PB single" value={formatTime(all.best)} accent="text-brass-300" sub={pbSolve ? lockName(pbSolve.lockId) : undefined} />
-        <Stat label="Nejlepší Ao5" value={formatTime(ao5?.v)} sub={ao5?.lock ?? 'potřeba 5 pokusů'} />
-        <Stat label="Nejlepší Ao12" value={formatTime(ao12?.v)} sub={ao12?.lock ?? 'potřeba 12 pokusů'} />
-        <Stat
-          label="Úspěšnost"
-          value={`${all.count ? Math.round((all.solved / all.count) * 100) : 0} %`}
-          accent={all.count && all.solved / all.count >= 0.8 ? 'text-emerald-300' : 'text-slate-100'}
-          sub={`${all.dnf}× DNF`}
-        />
+      {/* Hero summary */}
+      <div className="relative overflow-hidden rounded-[1.8rem] border border-white/10 bg-[linear-gradient(135deg,#4a2f6b_0%,#3a2a5c_40%,#2a2347_100%)] p-5 shadow-[0_24px_50px_-28px_rgba(0,0,0,0.9)]">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-brass-500/25 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-10 h-56 w-56 rounded-full bg-[#4fd8c4]/15 blur-3xl" />
+        <div className="relative flex items-center gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold text-white/70">Otevřené zámky</div>
+            <div className="font-display text-[3.4rem] font-semibold leading-none text-white">{all.solved}</div>
+            <div className="mt-1.5 text-sm text-white/70">
+              z {all.count} {plural(all.count, 'pokusu', 'pokusů', 'pokusů')} · {perLock.length} {plural(perLock.length, 'zámek', 'zámky', 'zámků')}
+            </div>
+          </div>
+          <SuccessRing pct={successPct} />
+        </div>
+        <div className="relative mt-5 grid grid-cols-3 gap-2">
+          <HeroFact icon="timer" value={formatDuration(all.totalTime)} label="u stopek" />
+          <HeroFact icon="flame" value={`${practice.current}`} label={plural(practice.current, 'den v řadě', 'dny v řadě', 'dní v řadě')} />
+          <HeroFact icon="flag" value={`${practice.days.size}`} label={plural(practice.days.size, 'tréninkový den', 'tréninkové dny', 'tréninkových dní')} />
+        </div>
+      </div>
+
+      {/* Records */}
+      <SectionTitle sub="Tvoje nejlepší výkony">Osobní rekordy</SectionTitle>
+      <div className="grid grid-cols-3 gap-2">
+        <Record icon="trophy" tint="#ffb547" label="Nejrychlejší" value={formatTime(all.best)} sub={pbSolve ? lockName(pbSolve.lockId) : '—'} />
+        <Record icon="target" tint="#b69cff" label="Průměr z 5" value={formatTime(ao5?.v)} sub={ao5?.lock ?? 'chce 5 pokusů'} />
+        <Record icon="star" tint="#4fd8c4" label="Průměr z 12" value={formatTime(ao12?.v)} sub={ao12?.lock ?? 'chce 12 pokusů'} />
       </div>
 
       {/* Progress */}
-      <SectionTitle sub="Jednotlivé časy a klouzavý průměr Ao5">Progrese v čase</SectionTitle>
-      <Card className="p-3">
-        <select className="field mb-3 text-sm" value={lockId ?? ''} onChange={(e) => setLockId(e.target.value || null)}>
-          <option value="">Všechny zámky</option>
+      <SectionTitle sub="Každá tečka je jeden pokus, čára ukazuje průměr z posledních pěti">Tvůj pokrok</SectionTitle>
+      <Card className="overflow-hidden p-4">
+        <div className="scrollbar-none -mx-4 mb-4 flex gap-2 overflow-x-auto px-4">
           {lockIds.map((id) => (
-            <option key={id} value={id}>
+            <LockChip key={id} active={lockId === id} belt={lockOf(id)?.belt} onClick={() => setLockId(id)}>
               {lockName(id)}
-            </option>
+            </LockChip>
           ))}
-        </select>
+          <LockChip active={lockId === null} onClick={() => setLockId(null)}>
+            Všechny zámky
+          </LockChip>
+        </div>
         {progress.length < 2 ? (
           <p className="py-8 text-center text-sm text-slate-500">Pro graf jsou potřeba alespoň 2 pokusy.</p>
         ) : (
           <>
             {firstVsLast && (
-              <div className="mb-2 flex items-baseline gap-2 px-1">
-                <span className={`whitespace-nowrap font-mono text-2xl font-bold ${firstVsLast.pct >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
-                  {firstVsLast.pct >= 0 ? '−' : '+'}
-                  {Math.abs(firstVsLast.pct)} %
-                </span>
-                <span className="text-xs text-slate-400">
-                  {formatTime(firstVsLast.first)} → {formatTime(firstVsLast.last)} (průměr prvních vs. posledních pokusů)
-                </span>
+              <div className="mb-3 flex items-center gap-3">
+                <div
+                  className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${firstVsLast.pct >= 0 ? 'bg-emerald-400/15 text-emerald-300' : 'bg-rose-400/15 text-rose-300'}`}
+                >
+                  <Icon name={firstVsLast.pct >= 0 ? 'zap' : 'refresh'} size={24} />
+                </div>
+                <p className="text-[0.95rem] leading-snug text-slate-300">
+                  {firstVsLast.pct >= 0 ? (
+                    <>
+                      {progressLock ? 'Na tomhle zámku jsi' : 'Celkově jsi'} <b className="font-display text-lg font-semibold text-emerald-300">o {firstVsLast.pct} % rychlejší</b> než na začátku.
+                    </>
+                  ) : (
+                    <>
+                      Poslední pokusy jsou <b className="font-display text-lg font-semibold text-rose-300">o {Math.abs(firstVsLast.pct)} % pomalejší</b>. Zkus lehčí napětí.
+                    </>
+                  )}
+                  <span className="block text-xs text-slate-500">
+                    {formatTime(firstVsLast.first)} → {formatTime(firstVsLast.last)} · první vs. poslední pokusy
+                  </span>
+                </p>
               </div>
             )}
-            <div className="h-56">
+            <div className="mb-1 flex items-center gap-4 text-xs text-slate-400">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: C_SINGLE }} /> Pokus
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-[3px] w-4 rounded-full" style={{ background: C_AVG }} /> Průměr z 5
+              </span>
+            </div>
+            <div className="-mx-2 h-56">
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={progress} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
-                  <CartesianGrid stroke={GRID} strokeDasharray="2 4" vertical={false} />
-                  <XAxis dataKey="idx" tick={{ fill: AXIS, fontSize: 11 }} tickLine={false} axisLine={{ stroke: GRID }} />
+                <ComposedChart data={progress} margin={{ top: 8, right: 10, bottom: 0, left: -4 }}>
+                  <defs>
+                    <linearGradient id="ao5-fill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0" stopColor={C_AVG} stopOpacity={0.32} />
+                      <stop offset="1" stopColor={C_AVG} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke={GRID} vertical={false} />
+                  <XAxis dataKey="idx" tick={{ fill: AXIS, fontSize: 11 }} tickLine={false} axisLine={false} />
                   <YAxis tickFormatter={fmtAxis} tick={{ fill: AXIS, fontSize: 11 }} tickLine={false} axisLine={false} width={48} />
-                  <Tooltip content={<TimeTooltip />} cursor={{ stroke: '#64748b', strokeDasharray: '3 3' }} />
-                  <Legend wrapperStyle={{ fontSize: 12, color: AXIS }} iconType="plainline" />
-                  <Line name="Čas" dataKey="single" stroke={C_SINGLE} strokeWidth={1.5} strokeOpacity={0.6} dot={{ r: 4, fill: C_SINGLE, stroke: '#1e293b', strokeWidth: 2 }} activeDot={{ r: 6 }} connectNulls isAnimationActive={false} />
-                  <Line name="Ao5" dataKey="ao5" stroke={C_AVG} strokeWidth={2.5} dot={false} connectNulls isAnimationActive={false} />
+                  <Tooltip content={<TimeTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.25)', strokeDasharray: '3 4' }} />
+                  <Area name="Průměr z 5" type="monotone" dataKey="ao5" stroke={C_AVG} strokeWidth={2.5} fill="url(#ao5-fill)" connectNulls isAnimationActive={false} />
+                  <Line
+                    name="Pokus"
+                    dataKey="single"
+                    stroke="none"
+                    dot={{ r: 4.5, fill: C_SINGLE, stroke: '#262038', strokeWidth: 2 }}
+                    activeDot={{ r: 7, fill: C_SINGLE, stroke: '#fff', strokeWidth: 2 }}
+                    isAnimationActive={false}
+                  />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
-            <button className="mt-2 text-xs text-brass-400" onClick={() => setShowTable((v) => !v)}>
+            <button className="mt-2 text-xs font-bold text-brass-400" onClick={() => setShowTable((v) => !v)}>
               {showTable ? 'Skrýt tabulku' : 'Zobrazit jako tabulku'}
             </button>
             {showTable && (
-              <div className="mt-2 max-h-56 overflow-y-auto rounded-xl bg-ink-950">
+              <div className="mt-2 max-h-56 overflow-y-auto rounded-2xl bg-black/25">
                 <table className="w-full text-xs">
-                  <thead className="sticky top-0 bg-ink-950 text-slate-500">
+                  <thead className="sticky top-0 bg-ink-900 text-slate-500">
                     <tr>
-                      <th className="px-3 py-1.5 text-left">#</th>
-                      <th className="px-3 py-1.5 text-left">Datum</th>
-                      <th className="px-3 py-1.5 text-right">Čas</th>
-                      <th className="px-3 py-1.5 text-right">Ao5</th>
+                      <th className="px-3 py-2 text-left font-semibold">#</th>
+                      <th className="px-3 py-2 text-left font-semibold">Datum</th>
+                      <th className="px-3 py-2 text-right font-semibold">Čas</th>
+                      <th className="px-3 py-2 text-right font-semibold">Průměr z 5</th>
                     </tr>
                   </thead>
                   <tbody className="font-mono">
                     {progress.map((p) => (
-                      <tr key={p.idx} className="border-t border-edge/40">
-                        <td className="px-3 py-1 text-slate-500">{p.idx}</td>
-                        <td className="px-3 py-1 text-slate-400">{formatDate(p.date, false)}</td>
-                        <td className="px-3 py-1 text-right">{p.single === null ? 'DNF' : formatTime(p.single)}</td>
-                        <td className="px-3 py-1 text-right text-slate-400">{formatTime(p.ao5)}</td>
+                      <tr key={p.idx} className="border-t border-white/[0.05]">
+                        <td className="px-3 py-1.5 text-slate-500">{p.idx}</td>
+                        <td className="px-3 py-1.5 text-slate-400">{formatDate(p.date, false)}</td>
+                        <td className="px-3 py-1.5 text-right font-bold">{p.single === null ? 'DNF' : formatTime(p.single)}</td>
+                        <td className="px-3 py-1.5 text-right text-slate-400">{formatTime(p.ao5)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -313,142 +397,303 @@ export function StatsPage() {
       </Card>
 
       {/* Activity */}
-      <SectionTitle sub="Počet pokusů za den – posledních 12 týdnů">Aktivita</SectionTitle>
-      <Card className="p-3">
-        <div className="grid grid-flow-col grid-rows-7 gap-[3px]" style={{ gridTemplateColumns: 'repeat(12, minmax(0, 1fr))' }}>
-          {heat.cells.map((c) => (
-            <div
-              key={c.t}
-              title={`${formatDate(c.t, false)}: ${c.c} pokusů`}
-              className="aspect-square rounded-[3px]"
-              style={{ background: c.c ? `rgba(234, 179, 8, ${0.25 + 0.75 * (c.c / heat.max)})` : '#0f172a' }}
-            />
-          ))}
+      <SectionTitle sub="Posledních 12 týdnů – čím sytější tečka, tím víc pokusů">Kdy trénuješ</SectionTitle>
+      <Card className="p-4">
+        <div className="flex gap-2">
+          <div className="grid grid-rows-7 gap-[5px] pr-0.5 text-[10px] leading-none text-slate-500">
+            {['Po', '', 'St', '', 'Pá', '', 'Ne'].map((d, i) => (
+              <span key={i} className="flex items-center">
+                {d}
+              </span>
+            ))}
+          </div>
+          <div className="grid flex-1 grid-flow-col grid-rows-7 gap-[5px]" style={{ gridTemplateColumns: 'repeat(12, minmax(0, 1fr))' }}>
+            {heat.cells.map((c) => (
+              <div
+                key={c.t}
+                title={c.future ? undefined : `${formatDate(c.t, false)}: ${c.c} ${plural(c.c, 'pokus', 'pokusy', 'pokusů')}`}
+                className="aspect-square rounded-full"
+                style={{
+                  background: c.future ? 'transparent' : c.c ? `rgba(255, 173, 51, ${0.3 + 0.7 * (c.c / heat.max)})` : 'rgba(255,255,255,0.06)',
+                  boxShadow: c.c === heat.max && c.c > 0 ? '0 0 10px rgba(255,173,51,0.55)' : undefined,
+                }}
+              />
+            ))}
+          </div>
         </div>
-        <div className="mt-2 flex items-center justify-end gap-1 text-[10px] text-slate-500">
-          méně
-          {[0, 0.33, 0.66, 1].map((v) => (
-            <span key={v} className="h-2.5 w-2.5 rounded-[2px]" style={{ background: v ? `rgba(234,179,8,${0.25 + 0.75 * v})` : '#0f172a' }} />
-          ))}
-          více
+        <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+          <span>
+            <b className="text-slate-100">{heat.active}</b> {plural(heat.active, 'den', 'dny', 'dní')} s tréninkem · nejdelší série{' '}
+            <b className="text-slate-100">{practice.longest}</b> {plural(practice.longest, 'den', 'dny', 'dní')}
+          </span>
+          <span className="flex items-center gap-1 text-[10px] text-slate-500">
+            méně
+            {[0, 0.33, 0.66, 1].map((v) => (
+              <span key={v} className="h-2.5 w-2.5 rounded-full" style={{ background: v ? `rgba(255,173,51,${0.3 + 0.7 * v})` : 'rgba(255,255,255,0.06)' }} />
+            ))}
+            více
+          </span>
         </div>
       </Card>
 
       {/* Tools */}
-      <SectionTitle sub="Počet otevření (planžety i napínáky)">Nejpoužívanější nástroje</SectionTitle>
-      <Card className="p-3">
+      <SectionTitle sub="Kolikrát ti který nástroj pomohl zámek otevřít">Oblíbené nástroje</SectionTitle>
+      <Card className="p-2">
         {toolUsage.length ? (
-          <div style={{ height: Math.max(120, toolUsage.length * 34) }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={toolUsage} layout="vertical" margin={{ top: 0, right: 28, bottom: 0, left: 0 }} barCategoryGap={6}>
-                <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" width={118} tick={{ fill: '#cbd5e1', fontSize: 11 }} tickLine={false} axisLine={false} />
-                <Tooltip content={<CountTooltip />} cursor={{ fill: 'rgba(148,163,184,0.08)' }} />
-                <Bar dataKey="count" fill={C_SINGLE} radius={[0, 4, 4, 0]} label={{ position: 'right', fill: '#cbd5e1', fontSize: 11 }} isAnimationActive={false} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          toolUsage.map((t, i) => (
+            <div key={t.id} className="flex items-center gap-3 rounded-2xl px-2.5 py-2">
+              <div className="flex h-10 w-16 shrink-0 items-center justify-center rounded-xl bg-black/20 px-1.5">
+                <ToolArt profile={t.profile} className="h-full w-full" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="truncate text-sm font-bold text-slate-100">{t.name}</span>
+                  <span className="shrink-0 font-mono text-sm font-extrabold text-slate-200">{t.count}×</span>
+                </div>
+                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{ background: i === 0 ? 'linear-gradient(90deg,#ffc65a,#ff8f1f)' : 'linear-gradient(90deg,#7c6aa8,#a58ad6)' }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(t.count / toolUsage[0].count) * 100}%` }}
+                    transition={{ duration: 0.7, delay: i * 0.05 }}
+                  />
+                </div>
+              </div>
+            </div>
+          ))
         ) : (
           <p className="py-4 text-center text-sm text-slate-500">Přiřaď nástroje ke svým pokusům ve Stopkách.</p>
         )}
       </Card>
 
-      <SectionTitle sub="Seřazeno podle času relativně k obtížnosti zámku (1.00 = medián zámku)">Nejefektivnější kombinace</SectionTitle>
-      <Card className="divide-y divide-edge/50">
-        {combos.slice(0, 6).map((c, i) => (
-          <div key={`${c.pick}|${c.tension}`} className="flex items-center gap-3 px-4 py-2.5">
-            <span className={`w-6 font-mono text-sm font-bold ${i === 0 ? 'text-brass-400' : 'text-slate-500'}`}>{i + 1}.</span>
-            <div className="flex-1 text-sm">
-              <div className="text-slate-100">
-                {toolName(c.pick)} <span className="text-slate-500">+</span> {toolName(c.tension)}
+      {/* Combos */}
+      <SectionTitle sub="Porovnáno s tvým běžným časem na stejném zámku">Nejlepší kombinace</SectionTitle>
+      {combos.length ? (
+        <div className="space-y-2">
+          {combos.slice(0, showAllCombos ? 8 : 3).map((c, i) => (
+            <Card key={`${c.pick}|${c.tension}`} className="flex items-center gap-3 px-4 py-3">
+              <span
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-display text-base font-semibold"
+                style={
+                  i === 0
+                    ? { background: 'linear-gradient(135deg,#ffd27a,#f0962c)', color: '#2a1a05' }
+                    : i === 1
+                      ? { background: 'linear-gradient(135deg,#ece6f3,#a99fbf)', color: '#1e1a2b' }
+                      : i === 2
+                        ? { background: 'linear-gradient(135deg,#f0b48a,#b0673a)', color: '#2a1405' }
+                        : { background: 'rgba(255,255,255,0.07)', color: '#aaa1bd' }
+                }
+              >
+                {i + 1}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-bold text-slate-100">
+                  {toolName(c.pick)} <span className="font-normal text-slate-500">s</span> {toolName(c.tension)}
+                </div>
+                <div className={`text-xs font-semibold ${c.index < 1 ? 'text-emerald-300' : 'text-slate-400'}`}>{relWords(c.index)}</div>
+                <div className="text-[11px] text-slate-500">
+                  {c.times.length}× · průměr {formatTime(c.mean)} · nejlépe {formatTime(c.best)}
+                  {c.dnf ? ` · ${c.dnf}× nedokončeno` : ''}
+                </div>
               </div>
-              <div className="text-[11px] text-slate-500">
-                {c.times.length}× · průměr {formatTime(c.mean)} · best {formatTime(c.best)}
-                {c.dnf ? ` · ${c.dnf}× DNF` : ''}
-              </div>
-            </div>
-            <span className={`font-mono text-sm ${c.index <= 1 ? 'text-emerald-300' : 'text-slate-300'}`}>{c.index.toFixed(2)}</span>
-          </div>
-        ))}
-        {!combos.length && <p className="px-4 py-4 text-sm text-slate-500">Zatím bez dat.</p>}
-      </Card>
+            </Card>
+          ))}
+          {combos.length > 3 && (
+            <button className="w-full py-1 text-xs font-bold text-brass-400" onClick={() => setShowAllCombos((v) => !v)}>
+              {showAllCombos ? 'Zobrazit méně' : `Zobrazit další (${Math.min(8, combos.length) - 3})`}
+            </button>
+          )}
+        </div>
+      ) : (
+        <Card className="px-4 py-4 text-sm text-slate-500">Zatím bez dat.</Card>
+      )}
 
+      {/* Techniques */}
       {tech.length > 0 && (
         <>
           <SectionTitle>Techniky</SectionTitle>
-          <Card className="p-3">
-            <div className="h-32">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={tech} margin={{ top: 16, right: 8, bottom: 0, left: 8 }}>
-                  <XAxis dataKey="name" tick={{ fill: '#cbd5e1', fontSize: 11 }} tickLine={false} axisLine={{ stroke: GRID }} />
-                  <YAxis hide />
-                  <Tooltip content={<CountTooltip />} cursor={{ fill: 'rgba(148,163,184,0.08)' }} />
-                  <Bar dataKey="count" radius={[4, 4, 0, 0]} label={{ position: 'top', fill: '#cbd5e1', fontSize: 11 }} isAnimationActive={false}>
-                    {tech.map((t) => (
-                      <Cell key={t.name} fill={C_SINGLE} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+          <Card className="space-y-3 p-4">
+            {tech.map((t) => (
+              <div key={t.name}>
+                <div className="flex items-baseline justify-between text-sm">
+                  <span className="font-bold text-slate-100">{t.name}</span>
+                  <span className="text-xs text-slate-400">
+                    <b className="font-mono text-slate-200">{t.count}×</b> · průměr {formatTime(t.avg)}
+                  </span>
+                </div>
+                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-[#3f9fe8] to-[#6cc9ff]"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(t.count / techTotal) * 100}%` }}
+                    transition={{ duration: 0.7 }}
+                  />
+                </div>
+              </div>
+            ))}
           </Card>
         </>
       )}
 
       {/* Locks ranking */}
-      <SectionTitle sub="Nejrychlejší průměrný čas">😌 Comfort Locks</SectionTitle>
-      <LockList items={comfort} metric={(r) => formatTime(r.meanT)} />
-
-      <SectionTitle sub="Nejpomalejší průměr nebo nejvíc DNF">😈 Nemesis (Bête Noire)</SectionTitle>
-      <LockList
-        items={nemesis}
-        metric={(r) => (r.dnfRate > 0 ? `${formatTime(r.meanT)} · ${Math.round(r.dnfRate * 100)} % DNF` : formatTime(r.meanT))}
-        action={(r) => (
-          <Button
-            size="sm"
-            variant="danger"
-            onClick={() => {
-              setTimerConfig({ lockId: r.lock.id });
-              navigate('timer');
-            }}
-          >
-            Trénovat
-          </Button>
-        )}
-      />
+      <SectionTitle sub="Kde se cítíš jistě a co tě ještě potrápí">Zámky</SectionTitle>
+      <div className="space-y-3">
+        <LockGroup tone="comfort" title="Pohodové" emoji="😌" items={comfort} metric={(r) => `průměr ${formatTime(r.meanT)}`} />
+        <LockGroup
+          tone="nemesis"
+          title="Tvoje nemesis"
+          emoji="😈"
+          items={nemesis}
+          metric={(r) => (r.dnfRate > 0 ? `průměr ${formatTime(r.meanT)} · ${Math.round(r.dnfRate * 100)} % nedokončeno` : `průměr ${formatTime(r.meanT)}`)}
+          action={(r) => (
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={() => {
+                setTimerConfig({ lockId: r.lock.id });
+                navigate('timer');
+              }}
+            >
+              Trénovat
+            </Button>
+          )}
+        />
+      </div>
 
       {/* Games */}
-      <SectionTitle>Simulátor & hry</SectionTitle>
+      <SectionTitle>Simulátor a hry</SectionTitle>
       <div className="grid grid-cols-3 gap-2">
-        <Stat label="Sim. otevření" value={sims.length} sub={sims.length ? `best ${formatTime(Math.min(...sims.map((s) => s.time ?? Infinity)))}` : undefined} />
-        <Stat label="Kvíz rekord" value={quizBest || '—'} sub="bodů" />
-        <Stat label="Gauntlet PB" value={formatTime(gauntletPb?.time)} sub={gauntletPb ? `${gauntletPb.difficulty} · ${gauntletPb.rank}` : 'reálné zámky'} />
+        <Record icon="lock" tint="#b69cff" label="Simulátor" value={`${sims.length}×`} sub={sims.length ? `nejlépe ${formatTime(Math.min(...sims.map((s) => s.time ?? Infinity)))}` : 'otevřeno'} />
+        <Record icon="zap" tint="#4fd8c4" label="Kvíz" value={quizBest ? String(quizBest) : '—'} sub="bodů rekord" />
+        <Record icon="flag" tint="#ff8a6b" label="Gauntlet" value={formatTime(gauntletPb?.time)} sub={gauntletPb ? `${gauntletPb.difficulty} · ${gauntletPb.rank}` : 'reálné zámky'} />
       </div>
     </div>
   );
 }
 
-type Ranked = { lock: { id: string; brand: string; name: string; belt: import('../../types').Belt }; solves: SolveRecord[]; meanT: number; dnfRate: number };
-
-function LockList<T extends Ranked>({ items, metric, action }: { items: T[]; metric: (r: T) => string; action?: (r: T) => React.ReactNode }) {
-  if (!items.length) return <p className="text-sm text-slate-500">Zatím bez dat.</p>;
+function SuccessRing({ pct }: { pct: number }) {
+  const r = 34;
+  const c = 2 * Math.PI * r;
   return (
-    <Card className="divide-y divide-edge/50">
-      {items.map((r, i) => (
-        <div key={r.lock.id} className="flex items-center gap-3 px-4 py-2.5">
-          <span className="w-5 font-mono text-sm text-slate-500">{i + 1}.</span>
-          <div className="flex-1">
-            <div className="text-sm text-slate-100">
-              {r.lock.brand} {r.lock.name}
+    <div className="relative h-[92px] w-[92px] shrink-0">
+      <svg viewBox="0 0 92 92" className="h-full w-full -rotate-90">
+        <defs>
+          <linearGradient id="ring-g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#ffd27a" />
+            <stop offset="1" stopColor="#ff7a59" />
+          </linearGradient>
+        </defs>
+        <circle cx={46} cy={46} r={r} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={9} />
+        <motion.circle
+          cx={46}
+          cy={46}
+          r={r}
+          fill="none"
+          stroke="url(#ring-g)"
+          strokeWidth={9}
+          strokeLinecap="round"
+          strokeDasharray={c}
+          initial={{ strokeDashoffset: c }}
+          animate={{ strokeDashoffset: c * (1 - pct / 100) }}
+          transition={{ duration: 1, ease: 'easeOut' }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="font-mono text-xl font-extrabold leading-none text-white">{pct} %</span>
+        <span className="mt-0.5 text-[10px] font-semibold text-white/60">úspěšnost</span>
+      </div>
+    </div>
+  );
+}
+
+function HeroFact({ icon, value, label }: { icon: IconName; value: string; label: string }) {
+  return (
+    <div className="rounded-2xl bg-black/20 px-3 py-2.5">
+      <Icon name={icon} size={16} className="text-brass-300" />
+      <div className="mt-1 font-mono text-lg font-extrabold leading-tight text-white">{value}</div>
+      <div className="text-[11px] leading-tight text-white/60">{label}</div>
+    </div>
+  );
+}
+
+function Record({ icon, tint, label, value, sub }: { icon: IconName; tint: string; label: string; value: ReactNode; sub: string }) {
+  return (
+    <div className="card flex flex-col px-3 py-3">
+      <span className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: `${tint}24`, color: tint }}>
+        <Icon name={icon} size={16} />
+      </span>
+      <div className="mt-2 text-xs font-semibold text-slate-400">{label}</div>
+      <div className="font-mono text-xl font-extrabold leading-tight text-slate-50">{value}</div>
+      <div className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-slate-500">{sub}</div>
+    </div>
+  );
+}
+
+function LockChip({ active, belt, onClick, children }: { active: boolean; belt?: Belt; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-[0.8rem] font-bold transition ${
+        active ? 'border-brass-400/60 bg-brass-400/15 text-brass-200' : 'border-white/[0.08] bg-white/[0.04] text-slate-400'
+      }`}
+    >
+      {belt && <span className="h-2.5 w-2.5 rounded-full ring-1 ring-white/20" style={{ background: beltOf(belt).color }} />}
+      {children}
+    </button>
+  );
+}
+
+type Ranked = { lock: { id: string; brand: string; name: string; belt: Belt }; solves: SolveRecord[]; meanT: number; dnfRate: number };
+
+function LockGroup<T extends Ranked>({
+  tone,
+  title,
+  emoji,
+  items,
+  metric,
+  action,
+}: {
+  tone: 'comfort' | 'nemesis';
+  title: string;
+  emoji: string;
+  items: T[];
+  metric: (r: T) => string;
+  action?: (r: T) => ReactNode;
+}) {
+  const bg =
+    tone === 'comfort'
+      ? 'bg-[linear-gradient(160deg,rgba(52,211,153,0.14),rgba(30,25,46,0.6)_60%)]'
+      : 'bg-[linear-gradient(160deg,rgba(251,113,133,0.15),rgba(30,25,46,0.6)_60%)]';
+  return (
+    <div className={`overflow-hidden rounded-[1.45rem] border border-white/[0.07] ${bg}`}>
+      <div className="flex items-center gap-2 px-4 pb-1 pt-3.5">
+        <span className="text-lg">{emoji}</span>
+        <span className={`font-display text-base font-semibold ${tone === 'comfort' ? 'text-emerald-200' : 'text-rose-200'}`}>{title}</span>
+      </div>
+      {items.length ? (
+        items.map((r) => {
+          const b = beltOf(r.lock.belt);
+          return (
+            <div key={r.lock.id} className="flex items-center gap-3 px-4 py-2.5">
+              <span className="h-3 w-3 shrink-0 rounded-full ring-2 ring-white/10" style={{ background: b.color }} title={`${b.label} pás`} />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-bold text-slate-100">
+                  {r.lock.brand} {r.lock.name}
+                </div>
+                <div className="text-xs text-slate-400">
+                  {metric(r)} · {r.solves.length} {plural(r.solves.length, 'pokus', 'pokusy', 'pokusů')}
+                </div>
+              </div>
+              {action?.(r)}
             </div>
-            <div className="flex items-center gap-2 text-[11px] text-slate-500">
-              <BeltBadge belt={r.lock.belt} size="sm" /> {r.solves.length} pokusů
-            </div>
-          </div>
-          <span className="font-mono text-xs text-slate-300">{metric(r)}</span>
-          {action?.(r)}
-        </div>
-      ))}
-    </Card>
+          );
+        })
+      ) : (
+        <p className="px-4 pb-3 text-sm text-slate-500">Zatím bez dat.</p>
+      )}
+      <div className="h-1.5" />
+    </div>
   );
 }

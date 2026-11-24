@@ -215,7 +215,7 @@ export function TimerPage() {
         ? 'border-bad/70 bg-bad/10'
         : phase === 'inspect'
           ? 'border-brass-500 bg-brass-500/10'
-          : 'border-edge bg-panel/50';
+          : 'border-white/[0.07] bg-[radial-gradient(120%_90%_at_50%_0%,rgba(255,173,51,0.13),rgba(182,156,255,0.06)_45%,rgba(255,255,255,0.03)_80%)] shadow-[0_24px_50px_-30px_rgba(0,0,0,0.9)]';
   const digitColor = phase === 'ready' ? 'text-emerald-300' : phase === 'holding' ? 'text-red-300' : 'text-slate-50';
 
   const mainText = (() => {
@@ -236,7 +236,7 @@ export function TimerPage() {
       <Card className="p-3">
         <div className="grid grid-cols-2 gap-2">
           <label className="col-span-2">
-            <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-steel-400">Zámek</span>
+            <span className="mb-1 block text-xs font-semibold text-steel-400">Zámek</span>
             <select className="field" value={cfg.lockId ?? ''} onChange={(e) => setTimerConfig({ lockId: e.target.value || null })}>
               <option value="">— bez zámku —</option>
               {data.locks.map((l) => (
@@ -247,7 +247,7 @@ export function TimerPage() {
             </select>
           </label>
           <label>
-            <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-steel-400">Planžeta</span>
+            <span className="mb-1 block text-xs font-semibold text-steel-400">Planžeta</span>
             <select className="field text-sm" value={cfg.pickId ?? ''} onChange={(e) => setTimerConfig({ pickId: e.target.value || null })}>
               <option value="">—</option>
               {picks.map((t) => (
@@ -258,7 +258,7 @@ export function TimerPage() {
             </select>
           </label>
           <label>
-            <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-steel-400">Napínák</span>
+            <span className="mb-1 block text-xs font-semibold text-steel-400">Napínák</span>
             <select className="field text-sm" value={cfg.tensionId ?? ''} onChange={(e) => setTimerConfig({ tensionId: e.target.value || null })}>
               <option value="">—</option>
               {tensions.map((t) => (
@@ -284,7 +284,7 @@ export function TimerPage() {
 
       {/* Stackmat pad */}
       <div
-        className={`no-select touch-none relative mt-3 flex h-[42vh] min-h-[260px] cursor-pointer flex-col items-center justify-center rounded-3xl border-2 transition-colors duration-150 ${padColor}`}
+        className={`no-select touch-none relative mt-3 flex h-[42vh] min-h-[260px] cursor-pointer flex-col items-center justify-center rounded-[2.2rem] border-2 transition-colors duration-150 ${padColor}`}
         onPointerDown={onPadDown}
         onPointerUp={onPadUp}
         onPointerCancel={onPadUp}
@@ -293,7 +293,7 @@ export function TimerPage() {
         }}
         onContextMenu={(e) => e.preventDefault()}
       >
-        <div className="absolute left-4 top-3 flex gap-2 text-[10px] font-semibold uppercase tracking-wider">
+        <div className="absolute left-4 top-3 flex gap-2 text-xs font-semibold">
           {settings.audioTrigger && (
             <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${mic.status === 'on' ? 'bg-ok/15 text-emerald-300' : 'bg-bad/15 text-red-300'}`}>
               <Icon name="mic" size={11} /> {mic.status === 'on' ? 'mic' : mic.status}
@@ -302,7 +302,7 @@ export function TimerPage() {
           {settings.inspectionSec > 0 && <span className="rounded-full bg-brass-500/15 px-2 py-0.5 text-brass-300">insp {settings.inspectionSec}s</span>}
           {required === 2 && <span className="rounded-full bg-azure-400/15 px-2 py-0.5 text-azure-400">2 prsty</span>}
         </div>
-        <motion.div key={phase === 'stopped' ? lastId : 'live'} initial={phase === 'stopped' ? { scale: 1.08 } : false} animate={{ scale: 1 }} className={`font-mono text-[18vw] font-bold leading-none tabular sm:text-8xl ${digitColor}`}>
+        <motion.div key={phase === 'stopped' ? lastId : 'live'} initial={phase === 'stopped' ? { scale: 1.08 } : false} animate={{ scale: 1 }} className={`font-mono text-[19vw] font-extrabold leading-none tracking-tight sm:text-8xl ${digitColor}`}>
           {mainText}
         </motion.div>
         <div className="mt-3 text-sm text-slate-400">
@@ -364,7 +364,7 @@ export function TimerPage() {
         {stats.averages.map((a) => (
           <div key={a.n} className="card px-3.5 py-3">
             <div className="flex items-baseline justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-steel-400">Ao{a.n}</span>
+              <span className="text-xs font-semibold text-steel-400">Ao{a.n}</span>
               <span className="text-[10px] text-slate-500">best {formatTime(a.best)}</span>
             </div>
             <div className="mt-1 font-mono text-xl font-semibold tabular text-slate-50">{formatTime(a.current)}</div>
@@ -373,15 +373,15 @@ export function TimerPage() {
       </div>
       <div className="mt-2 grid grid-cols-3 gap-2 text-center">
         <div className="card px-2 py-2.5">
-          <div className="text-[10px] uppercase tracking-wider text-steel-400">PB single</div>
+          <div className="text-xs text-steel-400">PB single</div>
           <div className="font-mono font-semibold text-brass-300">{formatTime(stats.best)}</div>
         </div>
         <div className="card px-2 py-2.5">
-          <div className="text-[10px] uppercase tracking-wider text-steel-400">Mean</div>
+          <div className="text-xs text-steel-400">Mean</div>
           <div className="font-mono font-semibold">{formatTime(stats.mean)}</div>
         </div>
         <div className="card px-2 py-2.5">
-          <div className="text-[10px] uppercase tracking-wider text-steel-400">Otevřeno</div>
+          <div className="text-xs text-steel-400">Otevřeno</div>
           <div className="font-mono font-semibold">
             {stats.solved}/{stats.count}
           </div>
@@ -412,7 +412,7 @@ export function TimerPage() {
                 <span className="text-slate-400">Citlivost (práh)</span>
                 <span className="font-mono text-brass-300">{Math.round(settings.audioThreshold * 100)} %</span>
               </div>
-              <div className="relative h-3 overflow-hidden rounded-full bg-ink-950">
+              <div className="relative h-3 overflow-hidden rounded-full bg-black/25">
                 <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-ok via-brass-500 to-bad transition-[width] duration-75" style={{ width: `${mic.level * 100}%` }} />
                 <div className="absolute inset-y-0 w-0.5 bg-white" style={{ left: `${settings.audioThreshold * 100}%` }} />
               </div>
@@ -427,7 +427,7 @@ export function TimerPage() {
       {recent.length === 0 ? (
         <p className="text-sm text-slate-500">Zatím žádné časy. Podrž stopky a jdi na to!</p>
       ) : (
-        <Card className="divide-y divide-edge/50">
+        <Card className="divide-y divide-white/[0.06]">
           {recent.map((s, i) => {
             const n = scoped.length - i;
             const l = data.locks.find((x) => x.id === s.lockId);
@@ -457,7 +457,7 @@ export function TimerPage() {
       <AnimatePresence>
         {phase === 'running' && (
           <motion.div
-            className="no-select touch-none fixed inset-0 z-[70] flex cursor-pointer flex-col items-center justify-center bg-ink-950"
+            className="no-select touch-none fixed inset-0 z-[70] flex cursor-pointer flex-col items-center justify-center bg-black/25"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -471,7 +471,7 @@ export function TimerPage() {
               {settings.audioTrigger && mic.status === 'on' && (
                 <div className="mt-2 flex items-center justify-center gap-2">
                   <Icon name="mic" size={14} className="text-emerald-400" />
-                  <div className="h-1.5 w-32 overflow-hidden rounded-full bg-panel">
+                  <div className="h-1.5 w-32 overflow-hidden rounded-full bg-white/[0.07]">
                     <div className="h-full bg-emerald-400" style={{ width: `${mic.level * 100}%` }} />
                   </div>
                 </div>
@@ -509,15 +509,15 @@ function SolveSheet({ solve, onClose, onNote }: { solve: SolveRecord | null; onC
               </Button>
             ))}
           </div>
-          <dl className="mt-4 space-y-2 rounded-2xl bg-ink-950 p-3 text-sm">
+          <dl className="mt-4 space-y-2 rounded-2xl bg-black/25 p-3 text-sm">
             <Row k="Zámek" v={l ? `${l.brand} ${l.name}` : '—'} />
             <Row k="Planžeta" v={tool(s.pickId) ? `${tool(s.pickId)!.name} (${TOOL_PROFILES[tool(s.pickId)!.profile].label}, ${thicknessLabel(tool(s.pickId)!.thickness)})` : '—'} />
             <Row k="Napínák" v={tool(s.tensionId) ? `${tool(s.tensionId)!.position} ${tool(s.tensionId)!.name}` : '—'} />
             <Row k="Technika" v={s.technique} />
             <Row k="Zdroj" v={s.source === 'audio' ? 'Akustické zastavení' : s.source === 'gauntlet' ? '3-Lock Gauntlet' : 'Stopky'} />
           </dl>
-          <div className="mt-3 rounded-2xl border border-edge p-3 text-sm">
-            <div className="mb-1 text-xs uppercase tracking-wider text-steel-400">Poznámka</div>
+          <div className="mt-3 rounded-2xl border border-white/10 p-3 text-sm">
+            <div className="mb-1 text-xs text-steel-400">Poznámka</div>
             <div className="text-slate-300">{s.note || <span className="text-slate-500">Bez poznámky</span>}</div>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2">
@@ -576,7 +576,7 @@ function NoteSheet({ solve, onClose }: { solve: SolveRecord | null; onClose: () 
       <textarea className="field min-h-[120px]" autoFocus value={text} onChange={(e) => setText(e.target.value)} placeholder="např. 3. stavítko bylo spool, pomohlo povolit napínák" />
       <div className="mt-3 flex flex-wrap gap-2">
         {suggestions.map((s) => (
-          <button key={s} className="rounded-full border border-edge px-3 py-1 text-xs text-slate-300" onClick={() => setText((t) => (t ? `${t} ${s}` : s))}>
+          <button key={s} className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-300" onClick={() => setText((t) => (t ? `${t} ${s}` : s))}>
             {s}
           </button>
         ))}

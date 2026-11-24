@@ -119,7 +119,7 @@ function LockVault() {
                         const t = l.pinConfig.find((p) => p.index === i)?.type ?? 'unknown';
                         const pos = l.bindingOrder.indexOf(i);
                         return (
-                          <div key={i} className="flex flex-1 flex-col items-center rounded-lg bg-ink-950 py-1.5" title={PIN_TYPES[t].label}>
+                          <div key={i} className="flex flex-1 flex-col items-center rounded-lg bg-black/25 py-1.5" title={PIN_TYPES[t].label}>
                             <span className="text-[9px] font-semibold" style={{ color: PIN_TYPES[t].color }}>
                               {PIN_TYPES[t].short}
                             </span>
@@ -287,11 +287,11 @@ function LockForm({ value, onClose }: { value: (Omit<LockItem, 'id' | 'createdAt
       <div className="grid grid-cols-2 gap-x-3">
         <Field label={f.mechanism === 'disc-detainer' ? 'Počet disků' : 'Počet stavítek'}>
           <div className="flex items-center gap-2">
-            <button type="button" className="h-10 w-10 rounded-xl border border-edge text-lg" onClick={() => set('pins', Math.max(1, f.pins - 1))}>
+            <button type="button" className="h-10 w-10 rounded-xl border border-white/10 text-lg" onClick={() => set('pins', Math.max(1, f.pins - 1))}>
               −
             </button>
             <span className="flex-1 text-center font-mono text-lg">{f.pins}</span>
-            <button type="button" className="h-10 w-10 rounded-xl border border-edge text-lg" onClick={() => set('pins', Math.min(12, f.pins + 1))}>
+            <button type="button" className="h-10 w-10 rounded-xl border border-white/10 text-lg" onClick={() => set('pins', Math.min(12, f.pins + 1))}>
               +
             </button>
           </div>
@@ -307,7 +307,7 @@ function LockForm({ value, onClose }: { value: (Omit<LockItem, 'id' | 'createdAt
               key={b.id}
               type="button"
               onClick={() => set('belt', b.id)}
-              className={`rounded-xl border px-2 py-2 text-xs font-semibold transition ${f.belt === b.id ? 'scale-[1.03] border-transparent' : 'border-edge opacity-60'}`}
+              className={`rounded-xl border px-2 py-2 text-xs font-semibold transition ${f.belt === b.id ? 'scale-[1.03] border-transparent' : 'border-white/10 opacity-60'}`}
               style={f.belt === b.id ? { background: b.color, color: b.text } : { color: b.color === '#0a0a0a' ? '#e5e7eb' : b.color }}
             >
               {b.label}
@@ -361,13 +361,13 @@ function Arsenal() {
       ) : (
         groups.map((g) => (
           <div key={g.c} className="mb-5">
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-steel-400">{TOOL_CATEGORIES[g.c]}</h3>
+            <h3 className="mb-2 text-xs font-semibold text-steel-400">{TOOL_CATEGORIES[g.c]}</h3>
             <div className="grid gap-2 sm:grid-cols-2">
               {g.items.map((t) => {
                 const u = usage.get(t.id);
                 return (
                   <Card key={t.id} onClick={() => setEdit(t)} className="p-3">
-                    <div className="rounded-lg bg-ink-950 px-2 py-1">
+                    <div className="rounded-lg bg-black/25 px-2 py-1">
                       <ToolArt profile={t.profile} className="h-9 w-full" />
                     </div>
                     <div className="mt-2 flex items-start justify-between gap-2">
@@ -380,7 +380,7 @@ function Arsenal() {
                       {t.position !== 'n/a' && <span className="rounded-md bg-azure-400/15 px-1.5 py-0.5 text-[10px] font-bold text-azure-400">{t.position}</span>}
                     </div>
                     <div className="mt-2 flex items-center justify-between text-[11px]">
-                      <span className="rounded-md bg-ink-950 px-2 py-0.5 font-mono text-steel-300">{thicknessLabel(t.thickness)}</span>
+                      <span className="rounded-md bg-black/25 px-2 py-0.5 font-mono text-steel-300">{thicknessLabel(t.thickness)}</span>
                       <span className="text-slate-500">
                         {u ? `${u.count}× · PB ${formatTime(u.best, { dnfLabel: '—' })}` : 'nepoužito'}
                       </span>
@@ -446,7 +446,7 @@ function ToolForm({ value, onClose }: { value: (Omit<ToolItem, 'id' | 'createdAt
         </div>
       }
     >
-      <div className="mb-3 rounded-xl bg-ink-950 px-3 py-2">
+      <div className="mb-3 rounded-xl bg-black/25 px-3 py-2">
         <ToolArt profile={f.profile} className="h-12 w-full" />
       </div>
       <Field label="Kategorie">

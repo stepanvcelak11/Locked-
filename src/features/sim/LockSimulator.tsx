@@ -294,7 +294,7 @@ export function LockSimulator({
       {/* Controls */}
       <div className={`card mt-3 p-3.5 ${compact ? '' : ''}`}>
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-steel-400">Napínák</span>
+          <span className="text-xs font-semibold text-steel-400">Napínák</span>
           <span className="font-mono text-sm" style={{ color: tensionColor }}>
             {Math.round(tension * 100)} %
           </span>
@@ -308,7 +308,7 @@ export function LockSimulator({
           value={tension}
           onChange={(e) => setTension(+e.target.value)}
           aria-label="Napětí napínáku"
-          style={{ background: `linear-gradient(90deg, ${tensionColor} ${tension * 100}%, #334155 ${tension * 100}%)` }}
+          style={{ background: `linear-gradient(90deg, ${tensionColor} ${tension * 100}%, rgba(255,255,255,0.1) ${tension * 100}%)` }}
         />
         <div className="mt-3 grid grid-cols-4 gap-2">
           {PRESETS.map((p) => (
@@ -316,7 +316,7 @@ export function LockSimulator({
               key={p.id}
               onClick={() => setTension(p.value)}
               className={`rounded-xl border px-2 py-2 text-xs font-semibold transition ${
-                Math.abs(tension - p.value) < 0.02 ? 'border-brass-500 bg-brass-500/15 text-brass-300' : 'border-edge text-steel-400 hover:text-slate-100'
+                Math.abs(tension - p.value) < 0.02 ? 'border-brass-500 bg-brass-500/15 text-brass-300' : 'border-white/10 text-steel-400 hover:text-slate-100'
               }`}
             >
               {p.label}
@@ -333,7 +333,7 @@ export function LockSimulator({
                 key={k}
                 onClick={() => setTool(k)}
                 className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium ${
-                  tool === k ? 'border-azure-400 bg-azure-400/10 text-azure-400' : 'border-edge text-steel-400'
+                  tool === k ? 'border-azure-400 bg-azure-400/10 text-azure-400' : 'border-white/10 text-steel-400'
                 }`}
               >
                 {SIM_TOOLS[k].label}

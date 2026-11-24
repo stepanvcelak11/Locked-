@@ -1,22 +1,51 @@
 @import 'tailwindcss';
 
+@import '@fontsource-variable/nunito/wght.css';
+@import '@fontsource-variable/fraunces/soft.css';
+
 @theme {
-  --color-ink-950: #090d16;
-  --color-ink-900: #111827;
-  --color-ink-850: #151d2e;
-  --color-panel: #1e293b;
-  --color-edge: #334155;
-  --color-brass-300: #fde68a;
-  --color-brass-400: #facc15;
-  --color-brass-500: #eab308;
-  --color-brass-600: #f59e0b;
-  --color-steel-300: #cbd5e1;
-  --color-steel-400: #94a3b8;
-  --color-azure-400: #38bdf8;
-  --color-ok: #10b981;
-  --color-bad: #ef4444;
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+  /* Warm night: plum-tinted surfaces instead of cold slate */
+  --color-ink-950: #120f1d;
+  --color-ink-900: #1a1628;
+  --color-ink-850: #211c32;
+  --color-panel: #2a2440;
+  --color-edge: #3b3454;
+  /* Honey brass – the primary accent */
+  --color-brass-300: #ffe1a6;
+  --color-brass-400: #ffc65a;
+  --color-brass-500: #ffad33;
+  --color-brass-600: #ff8f1f;
+  --color-steel-300: #ddd6ea;
+  --color-steel-400: #a99fbf;
+  --color-azure-400: #6cc9ff;
+  --color-ok: #34d399;
+  --color-bad: #fb7185;
+  /* Section accents */
+  --color-coral-300: #ffb4a1;
+  --color-coral-400: #ff8a6b;
+  --color-coral-500: #ff6f52;
+  /* Slate re-tinted warm (lavender grey) so every text-slate-* follows the new mood */
+  --color-slate-50: #fbf9fd;
+  --color-slate-100: #f4f0fa;
+  --color-slate-200: #e7e1f0;
+  --color-slate-300: #d0c8de;
+  --color-slate-400: #aaa1bd;
+  --color-slate-500: #827a97;
+  --color-slate-600: #605875;
+  --color-slate-700: #453f5a;
+  --color-slate-800: #2f2942;
+  --color-slate-900: #201b2e;
+  --color-slate-950: #151121;
+  /* Softer geometry everywhere */
+  --radius-md: 0.6rem;
+  --radius-lg: 0.85rem;
+  --radius-xl: 1.1rem;
+  --radius-2xl: 1.45rem;
+  --radius-3xl: 1.9rem;
+  --font-sans: 'Nunito Variable', 'Nunito', ui-rounded, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Numbers: same rounded face with tabular figures (see .font-mono below) – no hard monospace */
+  --font-mono: 'Nunito Variable', 'Nunito', ui-rounded, ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Fraunces Variable', 'Fraunces', Georgia, 'Times New Roman', serif;
 }
 
 :root {
@@ -27,28 +56,39 @@
 
 html,
 body {
-  background: #090d16;
-  color: #e2e8f0;
+  background: #120f1d;
+  color: #f4f0fa;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
 }
 
 body {
   font-family: var(--font-sans);
+  font-weight: 500;
   min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
   background:
-    radial-gradient(1200px 600px at 50% -200px, rgba(234, 179, 8, 0.07), transparent 60%),
-    radial-gradient(900px 500px at 100% 100%, rgba(56, 189, 248, 0.05), transparent 60%),
-    #090d16;
+    radial-gradient(900px 520px at 0% -120px, rgba(255, 166, 77, 0.16), transparent 62%),
+    radial-gradient(760px 520px at 110% 8%, rgba(167, 139, 250, 0.16), transparent 60%),
+    radial-gradient(900px 600px at 40% 115%, rgba(45, 212, 191, 0.1), transparent 60%),
+    #120f1d;
   background-attachment: fixed;
+}
+
+.font-mono,
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-variation-settings: 'SOFT' 100;
+  letter-spacing: -0.01em;
 }
 
 #root {
   min-height: 100dvh;
-}
-
-.tabular {
-  font-variant-numeric: tabular-nums;
 }
 
 .no-select {
@@ -70,16 +110,18 @@ body {
 
 @layer components {
 .card {
-  background: linear-gradient(180deg, rgba(30, 41, 59, 0.92), rgba(23, 32, 48, 0.92));
-  border: 1px solid #334155;
-  border-radius: 1rem;
+  background: linear-gradient(160deg, rgba(52, 44, 78, 0.72), rgba(30, 25, 46, 0.78));
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1.45rem;
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.04) inset,
-    0 10px 30px -12px rgba(0, 0, 0, 0.6);
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 20px 40px -24px rgba(6, 3, 16, 0.9);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
 }
 
 .brass-text {
-  background: linear-gradient(180deg, #fde68a 0%, #eab308 55%, #b45309 100%);
+  background: linear-gradient(120deg, #ffe1a6 0%, #ffad33 50%, #ff7a59 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -92,9 +134,9 @@ body {
 input[type='range'].slider {
   -webkit-appearance: none;
   appearance: none;
-  height: 6px;
+  height: 8px;
   border-radius: 999px;
-  background: #334155;
+  background: rgba(255, 255, 255, 0.1);
   outline: none;
 }
 input[type='range'].slider::-webkit-slider-thumb {
@@ -102,37 +144,39 @@ input[type='range'].slider::-webkit-slider-thumb {
   width: 22px;
   height: 22px;
   border-radius: 999px;
-  background: radial-gradient(circle at 35% 30%, #fde68a, #eab308 55%, #a16207);
-  border: 2px solid #0f172a;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  background: radial-gradient(circle at 35% 30%, #fff1cf, #ffb547 55%, #f07a22);
+  border: 3px solid #1a1628;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
   cursor: pointer;
 }
 input[type='range'].slider::-moz-range-thumb {
   width: 22px;
   height: 22px;
   border-radius: 999px;
-  background: radial-gradient(circle at 35% 30%, #fde68a, #eab308 55%, #a16207);
-  border: 2px solid #0f172a;
+  background: radial-gradient(circle at 35% 30%, #fff1cf, #ffb547 55%, #f07a22);
+  border: 3px solid #1a1628;
   cursor: pointer;
 }
 
 .field {
   width: 100%;
-  background: #0f172a;
-  border: 1px solid #334155;
-  border-radius: 0.75rem;
-  padding: 0.6rem 0.8rem;
-  color: #e2e8f0;
+  background: rgba(12, 9, 22, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 1rem;
+  padding: 0.65rem 0.9rem;
+  color: #f4f0fa;
   font-size: 0.95rem;
+  font-weight: 600;
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, background-color 0.15s;
 }
 .field:focus {
-  border-color: #eab308;
+  border-color: #ffad33;
+  background: rgba(12, 9, 22, 0.6);
 }
 select.field {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23aaa1bd' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
   padding-right: 2rem;

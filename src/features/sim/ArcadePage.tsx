@@ -36,7 +36,7 @@ export function ArcadePage() {
           <button
             key={v.id}
             onClick={() => setView(v.id)}
-            className={`relative shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${view === v.id ? 'text-ink-950' : 'border border-edge text-steel-400'}`}
+            className={`relative shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${view === v.id ? 'text-ink-950' : 'border border-white/10 text-steel-400'}`}
           >
             {view === v.id && <motion.span layoutId="arcade-pill" className="absolute inset-0 -z-0 rounded-full bg-gradient-to-b from-brass-400 to-brass-600" />}
             <span className="relative z-10">

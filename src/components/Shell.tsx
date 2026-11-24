@@ -8,19 +8,19 @@ import { exportFile, importFile, solvesToCsv } from '../lib/storage';
 import { sound } from '../lib/audio';
 import { ETHICS } from '../data/library';
 
-const NAV: { id: TabId; label: string; icon: IconName }[] = [
-  { id: 'timer', label: 'Stopky', icon: 'timer' },
-  { id: 'arcade', label: 'Simulátor', icon: 'gamepad' },
-  { id: 'library', label: 'Encyklopedie', icon: 'book' },
-  { id: 'gear', label: 'Výbava', icon: 'toolbox' },
-  { id: 'stats', label: 'Statistiky', icon: 'chart' },
+const NAV: { id: TabId; label: string; icon: IconName; color: string }[] = [
+  { id: 'timer', label: 'Stopky', icon: 'timer', color: '#ffb547' },
+  { id: 'arcade', label: 'Simulátor', icon: 'gamepad', color: '#b69cff' },
+  { id: 'library', label: 'Encyklopedie', icon: 'book', color: '#4fd8c4' },
+  { id: 'gear', label: 'Výbava', icon: 'toolbox', color: '#ff8a6b' },
+  { id: 'stats', label: 'Statistiky', icon: 'chart', color: '#7cc4ff' },
 ];
 
 export function BottomNav() {
   const { tab, navigate } = useStore();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-edge/80 bg-ink-950/90 backdrop-blur-xl pb-[var(--safe-bottom)]">
-      <div className="mx-auto flex max-w-2xl">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.06] bg-ink-900/85 pb-[var(--safe-bottom)] backdrop-blur-xl">
+      <div className="mx-auto flex max-w-2xl px-1">
         {NAV.map((n) => {
           const active = tab === n.id;
           return (
@@ -30,17 +30,21 @@ export function BottomNav() {
                 sound.unlock();
                 navigate(n.id);
               }}
-              className={`relative flex flex-1 flex-col items-center gap-1 pb-2 pt-2.5 text-[10.5px] font-medium transition ${
-                active ? 'text-brass-400' : 'text-steel-400 hover:text-slate-200'
-              }`}
+              className={`relative flex flex-1 flex-col items-center gap-1 pb-2 pt-2 text-[11px] font-bold transition ${active ? '' : 'text-slate-500 hover:text-slate-300'}`}
+              style={active ? { color: n.color } : undefined}
               aria-current={active ? 'page' : undefined}
             >
-              {active && (
-                <motion.span layoutId="nav-pill" className="absolute top-0 h-0.5 w-10 rounded-full bg-brass-400" transition={{ type: 'spring', stiffness: 500, damping: 35 }} />
-              )}
-              <motion.span animate={{ scale: active ? 1.12 : 1, y: active ? -1 : 0 }}>
-                <Icon name={n.icon} size={22} />
-              </motion.span>
+              <span className="relative flex h-8 w-14 items-center justify-center">
+                {active && (
+                  <motion.span
+                    layoutId="nav-pill"
+                    className="absolute inset-0 rounded-full"
+                    style={{ background: `${n.color}26` }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                  />
+                )}
+                <Icon name={n.icon} size={21} strokeWidth={active ? 2.3 : 2} className="relative" />
+              </span>
               {n.label}
             </button>
           );
@@ -50,20 +54,31 @@ export function BottomNav() {
   );
 }
 
+/** Brand mark: padlock with a pin-tumbler cut-away (matches the app icon). */
 export function LogoMark({ size = 28 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
+    <svg width={size} height={size} viewBox="96 64 320 384" aria-hidden="true">
       <defs>
-        <linearGradient id="lm-b" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#fde68a" />
-          <stop offset="0.55" stopColor="#eab308" />
-          <stop offset="1" stopColor="#a16207" />
+        <linearGradient id="lm-g" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#ffd27a" />
+          <stop offset="1" stopColor="#f0962c" />
         </linearGradient>
       </defs>
-      <path d="M20 28v-7a12 12 0 0 1 24 0v3" fill="none" stroke="#94a3b8" strokeWidth="6" strokeLinecap="round" />
-      <rect x="12" y="27" width="40" height="30" rx="8" fill="url(#lm-b)" />
-      <circle cx="32" cy="39" r="4.5" fill="#0f172a" />
-      <path d="M30 41h4l1.5 9h-7z" fill="#0f172a" />
+      <path d="M180 236V172a76 76 0 0 1 152 0v64" fill="none" stroke="#e4ddee" strokeWidth="34" />
+      <rect x="118" y="226" width="276" height="202" rx="40" fill="url(#lm-g)" />
+      <g fill="#1b1528">
+        {[
+          [158, 256, 384],
+          [214, 270, 364],
+          [270, 250, 396],
+          [326, 264, 372],
+        ].map(([x, top, tip]) => (
+          <g key={x}>
+            <rect x={x} y={top} width={34} height={313 - top} rx={6} />
+            <path d={`M${x + 6} 323h22a6 6 0 0 1 6 6V${tip - 13}L${x + 17} ${tip}L${x} ${tip - 13}V329a6 6 0 0 1 6-6z`} />
+          </g>
+        ))}
+      </g>
     </svg>
   );
 }
@@ -72,14 +87,13 @@ export function TopBar() {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-edge/50 bg-ink-950/80 pt-[var(--safe-top)] backdrop-blur-xl">
-        <div className="mx-auto flex h-12 max-w-2xl items-center justify-between px-4">
-          <div className="flex items-center gap-2">
+      <header className="sticky top-0 z-30 bg-ink-950/70 pt-[var(--safe-top)] backdrop-blur-xl">
+        <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4">
+          <div className="flex items-center gap-2.5">
             <LogoMark size={24} />
-            <span className="text-[15px] font-bold tracking-[0.18em] brass-text">LOCKED</span>
-            <span className="hidden text-xs text-slate-500 sm:inline">· Locksport Lab</span>
+            <span className="font-display text-[1.3rem] font-semibold text-slate-50">Locked</span>
           </div>
-          <button onClick={() => setOpen(true)} className="rounded-full p-2 text-steel-400 hover:bg-white/5 hover:text-white" aria-label="Nastavení">
+          <button onClick={() => setOpen(true)} className="rounded-full bg-white/[0.05] p-2 text-slate-400 hover:bg-white/10 hover:text-white" aria-label="Nastavení">
             <Icon name="settings" />
           </button>
         </div>
@@ -108,7 +122,7 @@ function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }
 
   return (
     <Sheet open={open} onClose={onClose} title="Nastavení">
-      <h3 className="mb-1 text-xs font-semibold uppercase tracking-wider text-steel-400">Zvuk a odezva</h3>
+      <h3 className="mb-1 text-xs font-semibold text-steel-400">Zvuk a odezva</h3>
       <Toggle checked={s.sound} onChange={(v) => updateSettings({ sound: v })} label="Zvukové efekty" desc="Syntetizované klikání stavítek, stopky" />
       {s.sound && (
         <div className="flex items-center gap-3 py-2">
@@ -121,7 +135,7 @@ function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }
       )}
       <Toggle checked={s.haptics} onChange={(v) => updateSettings({ haptics: v })} label="Vibrace" desc="Hmatová odezva na podporovaných zařízeních" />
 
-      <h3 className="mb-1 mt-5 text-xs font-semibold uppercase tracking-wider text-steel-400">Stopky</h3>
+      <h3 className="mb-1 mt-5 text-xs font-semibold text-steel-400">Stopky</h3>
       <div className="py-2">
         <div className="mb-1 flex justify-between text-sm">
           <span>Doba podržení pro start</span>
@@ -146,7 +160,7 @@ function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }
       </div>
       <Toggle checked={s.hideTimeWhileRunning} onChange={(v) => updateSettings({ hideTimeWhileRunning: v })} label="Skrýt čas během měření" desc="Menší stres, lepší soustředění" />
 
-      <h3 className="mb-1 mt-5 text-xs font-semibold uppercase tracking-wider text-steel-400">Simulátor</h3>
+      <h3 className="mb-1 mt-5 text-xs font-semibold text-steel-400">Simulátor</h3>
       <div className="py-2">
         <div className="mb-1.5 text-sm">Obtížnost fyziky</div>
         <Segmented
@@ -162,7 +176,7 @@ function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }
       </div>
       <Toggle checked={s.showBindingHint} onChange={(v) => updateSettings({ showBindingHint: v })} label="Zvýraznit binding pin" desc="V průhledném módu žhne komora, která právě tuhne" />
 
-      <h3 className="mb-2 mt-5 text-xs font-semibold uppercase tracking-wider text-steel-400">Data a záloha</h3>
+      <h3 className="mb-2 mt-5 text-xs font-semibold text-steel-400">Data a záloha</h3>
       <p className="mb-3 text-xs text-slate-400">
         Vše je uloženo pouze v tomto zařízení (offline). Zálohu si stáhni jako .json a nahraj ji na jiném zařízení.
       </p>
@@ -228,14 +242,14 @@ function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }
         </div>
       )}
 
-      <h3 className="mb-2 mt-5 text-xs font-semibold uppercase tracking-wider text-steel-400">O aplikaci</h3>
+      <h3 className="mb-2 mt-5 text-xs font-semibold text-steel-400">O aplikaci</h3>
       <Button variant="outline" icon="shield" className="w-full" onClick={() => setShowEthics((v) => !v)}>
         Zlatá pravidla locksportu
       </Button>
       {showEthics && (
         <ul className="mt-3 space-y-2 text-sm text-slate-300">
           {ETHICS.filter((e) => e.golden).map((e) => (
-            <li key={e.title} className="rounded-xl bg-ink-950 p-3">
+            <li key={e.title} className="rounded-xl bg-black/25 p-3">
               <b className="text-brass-300">{e.title}.</b> {e.text}
             </li>
           ))}
@@ -263,7 +277,7 @@ export function EthicsGate() {
           >
             <div className="mb-4 flex flex-col items-center text-center">
               <LogoMark size={56} />
-              <h1 className="mt-3 text-xl font-bold">Zlatá pravidla Locksportu</h1>
+              <h1 className="mt-3 font-display text-2xl font-semibold">Zlatá pravidla Locksportu</h1>
               <p className="mt-1 text-sm text-slate-400">Locksport je sport a vzdělávání. Než začneš, potvrď prosím tato pravidla.</p>
             </div>
             <ol className="space-y-3">
@@ -278,8 +292,8 @@ export function EthicsGate() {
               ))}
             </ol>
             <p className="mt-3 text-xs text-slate-500">Celý etický kodex a přehled zákonů najdeš v Encyklopedii → Zákony & Etika.</p>
-            <button type="button" onClick={() => setChecked((v) => !v)} className="mt-4 flex w-full items-center gap-3 rounded-xl bg-ink-950 p-3 text-left text-sm">
-              <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${checked ? 'border-brass-500 bg-brass-500 text-ink-950' : 'border-edge'}`}>
+            <button type="button" onClick={() => setChecked((v) => !v)} className="mt-4 flex w-full items-center gap-3 rounded-xl bg-black/25 p-3 text-left text-sm">
+              <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${checked ? 'border-brass-500 bg-brass-500 text-ink-950' : 'border-white/10'}`}>
                 {checked && <Icon name="check" size={14} strokeWidth={3} />}
               </span>
               Budu otevírat pouze zámky, které vlastním a které nejsou v provozu.

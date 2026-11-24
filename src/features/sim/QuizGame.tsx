@@ -207,7 +207,7 @@ export function QuizGame() {
         {history.length > 0 && (
           <>
             <SectionTitle>Osobní žebříček</SectionTitle>
-            <Card className="divide-y divide-edge/60">
+            <Card className="divide-y divide-white/[0.06]">
               {history.slice(0, 5).map((h, i) => (
                 <div key={h.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
                   <span className={`w-6 font-mono font-bold ${i === 0 ? 'text-brass-400' : 'text-slate-500'}`}>#{i + 1}</span>
@@ -237,13 +237,13 @@ export function QuizGame() {
         <div className="text-sm text-slate-400">bodů</div>
         {score >= best && <div className="mt-2 text-sm font-semibold text-emerald-300">Nový osobní rekord!</div>}
         <div className="mt-4 grid grid-cols-2 gap-3">
-          <div className="rounded-xl bg-ink-950 p-3">
+          <div className="rounded-xl bg-black/25 p-3">
             <div className="font-mono text-xl">
               {correct}/{round.length}
             </div>
             <div className="text-xs text-slate-500">správně</div>
           </div>
-          <div className="rounded-xl bg-ink-950 p-3">
+          <div className="rounded-xl bg-black/25 p-3">
             <div className="font-mono text-xl">{bestStreak}</div>
             <div className="text-xs text-slate-500">nejdelší série</div>
           </div>
@@ -275,7 +275,7 @@ export function QuizGame() {
           <span className="font-mono font-semibold text-brass-300">{score} b</span>
         </span>
       </div>
-      <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-ink-950">
+      <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-black/25">
         <div
           className="h-full rounded-full transition-[width] duration-75"
           style={{ width: `${(timeLeft / LIMIT) * 100}%`, background: timeLeft < 3 ? '#ef4444' : timeLeft < 6 ? '#f59e0b' : '#10b981' }}
@@ -312,8 +312,8 @@ export function QuizGame() {
                           : state === 'wrong'
                             ? 'border-bad bg-bad/15 text-red-200'
                             : state === 'dim'
-                              ? 'border-edge/50 text-slate-500'
-                              : 'border-edge bg-ink-950/60 text-slate-200 hover:border-brass-500 active:scale-[0.99]'
+                              ? 'border-white/[0.06] text-slate-500'
+                              : 'border-white/10 bg-ink-950/60 text-slate-200 hover:border-brass-500 active:scale-[0.99]'
                       }`}
                     >
                       {o}
@@ -323,7 +323,7 @@ export function QuizGame() {
               </div>
               {picked !== null && (
                 <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-3">
-                  <p className="rounded-xl bg-ink-950 p-3 text-xs leading-relaxed text-slate-300">
+                  <p className="rounded-xl bg-black/25 p-3 text-xs leading-relaxed text-slate-300">
                     {picked === '__timeout__' && <b className="text-red-300">Čas vypršel. </b>}
                     {q!.explain}
                   </p>

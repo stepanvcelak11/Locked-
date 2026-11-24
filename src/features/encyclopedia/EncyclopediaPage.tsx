@@ -55,7 +55,7 @@ export function EncyclopediaPage() {
               {SECTIONS.map((s, i) => (
                 <motion.div key={s.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                   <Card onClick={() => setSection(s.id)} className="flex items-center gap-4 p-4">
-                    <div className={`rounded-2xl bg-ink-950 p-3 ${s.accent}`}>
+                    <div className={`rounded-2xl bg-black/25 p-3 ${s.accent}`}>
                       <Icon name={s.icon} size={24} />
                     </div>
                     <div className="flex-1">
@@ -163,7 +163,7 @@ function LockTypes() {
               <div className="flex-1">
                 <div className="font-semibold text-slate-100">{t.name}</div>
                 <div className="mt-0.5 text-xs text-slate-400">{t.summary}</div>
-                <div className="mt-1.5 flex items-center gap-2 text-[10px] uppercase tracking-wider text-slate-500">
+                <div className="mt-1.5 flex items-center gap-2 text-xs text-slate-500">
                   obtížnost <Dots n={t.difficulty} />
                 </div>
               </div>
@@ -172,13 +172,13 @@ function LockTypes() {
             <AnimatePresence initial={false}>
               {isOpen && (
                 <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
-                  <div className="border-t border-edge/60 px-4 pb-4 pt-3">
-                    {xr && <XrayArt shape={xr} className="mb-3 h-44 w-full rounded-xl bg-ink-950" />}
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-steel-400">Jak funguje</h4>
+                  <div className="border-t border-white/[0.06] px-4 pb-4 pt-3">
+                    {xr && <XrayArt shape={xr} className="mb-3 h-44 w-full rounded-xl bg-black/25" />}
+                    <h4 className="text-xs font-semibold text-steel-400">Jak funguje</h4>
                     <p className="mt-1 text-sm leading-relaxed text-slate-300">{t.howItWorks}</p>
-                    <h4 className="mt-3 text-xs font-semibold uppercase tracking-wider text-steel-400">Kde ho najdeš</h4>
+                    <h4 className="mt-3 text-xs font-semibold text-steel-400">Kde ho najdeš</h4>
                     <p className="mt-1 text-sm text-slate-300">{t.whereFound}</p>
-                    <h4 className="mt-3 text-xs font-semibold uppercase tracking-wider text-steel-400">Postup</h4>
+                    <h4 className="mt-3 text-xs font-semibold text-steel-400">Postup</h4>
                     <p className="mt-1 text-sm text-slate-300">{t.approach}</p>
                     <div className="mt-3 flex flex-wrap gap-1.5">
                       {t.tools.map((x) => (
@@ -276,20 +276,20 @@ function ToolsCatalog() {
                 </div>
                 <Icon name="chevronDown" className={`text-slate-500 transition ${sel?.profile === t.profile ? 'rotate-180' : ''}`} />
               </div>
-              <div className="mt-3 rounded-xl bg-ink-950 px-3 py-2">
+              <div className="mt-3 rounded-xl bg-black/25 px-3 py-2">
                 <ToolArt profile={t.profile} className="h-12 w-full" />
               </div>
             </div>
             <AnimatePresence initial={false}>
               {sel?.profile === t.profile && (
                 <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                  <div className="border-t border-edge/60 px-4 pb-4 pt-3">
-                    <div className="mb-3 h-40 overflow-hidden rounded-xl bg-ink-950">
+                  <div className="border-t border-white/[0.06] px-4 pb-4 pt-3">
+                    <div className="mb-3 h-40 overflow-hidden rounded-xl bg-black/25">
                       <ToolMotionDemo guide={t} />
                     </div>
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-brass-400">Kdy ho použít</h4>
+                    <h4 className="text-xs font-semibold text-brass-400">Kdy ho použít</h4>
                     <p className="mt-1 text-sm text-slate-300">{t.when}</p>
-                    <h4 className="mt-3 text-xs font-semibold uppercase tracking-wider text-azure-400">Jak s ním pracovat</h4>
+                    <h4 className="mt-3 text-xs font-semibold text-azure-400">Jak s ním pracovat</h4>
                     <p className="mt-1 text-sm text-slate-300">{t.how}</p>
                     <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                       <ul className="space-y-1 rounded-xl bg-ok/5 p-2.5 text-emerald-200">
@@ -368,13 +368,13 @@ function Ethics() {
       <div className="mb-4 grid grid-cols-2 gap-2">
         <button
           onClick={() => setTab('code')}
-          className={`rounded-2xl border p-3 text-left ${tab === 'code' ? 'border-emerald-500/60 bg-ok/10' : 'border-edge bg-panel/60'}`}
+          className={`rounded-2xl border p-3 text-left ${tab === 'code' ? 'border-emerald-500/60 bg-ok/10' : 'border-white/10 bg-white/[0.05]'}`}
         >
           <div className="text-xl">🤝</div>
           <div className="mt-1 text-sm font-semibold">Etický kodex</div>
           <div className="text-[11px] text-slate-400">Nepsaná pravidla komunity</div>
         </button>
-        <button onClick={() => setTab('law')} className={`rounded-2xl border p-3 text-left ${tab === 'law' ? 'border-brass-500/60 bg-brass-500/10' : 'border-edge bg-panel/60'}`}>
+        <button onClick={() => setTab('law')} className={`rounded-2xl border p-3 text-left ${tab === 'law' ? 'border-brass-500/60 bg-brass-500/10' : 'border-white/10 bg-white/[0.05]'}`}>
           <div className="text-xl">⚖️</div>
           <div className="mt-1 text-sm font-semibold">Zákony</div>
           <div className="text-[11px] text-slate-400">ČR a svět – co smíš a nesmíš</div>
@@ -447,7 +447,7 @@ function Ethics() {
             <LawCard key={s.title} s={s} />
           ))}
           <Card className="p-4">
-            <div className="text-xs font-semibold uppercase tracking-wider text-steel-400">Zdroje</div>
+            <div className="text-xs font-semibold text-steel-400">Zdroje</div>
             <ul className="mt-2 space-y-1 text-xs text-slate-400">
               {LAW_SOURCES.map((s) => (
                 <li key={s}>• {s}</li>
@@ -469,7 +469,7 @@ function Glossary() {
         <Icon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
         <input className="field pl-9" placeholder="Hledat pojem…" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
-      <Card className="divide-y divide-edge/50">
+      <Card className="divide-y divide-white/[0.06]">
         {list.map((g) => (
           <div key={g.term} className="px-4 py-3">
             <div className="text-sm font-semibold text-brass-300">{g.term}</div>

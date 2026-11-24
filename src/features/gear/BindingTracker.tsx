@@ -35,9 +35,9 @@ export function BindingTracker({
   };
 
   return (
-    <div className="rounded-2xl border border-edge bg-ink-950 p-3">
+    <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-steel-400">Binding Order Tracker</span>
+        <span className="text-xs font-semibold text-steel-400">Binding Order Tracker</span>
         <span className="text-[10px] text-slate-500">{recording ? 'Klepej na piny v pořadí tuhnutí' : 'Klepnutím změníš typ pinu'}</span>
       </div>
       <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.max(1, pins)}, minmax(0, 1fr))` }}>
@@ -51,7 +51,7 @@ export function BindingTracker({
               whileTap={{ scale: 0.92 }}
               onClick={() => (recording ? tapOrder(i) : cycle(i))}
               className={`relative flex flex-col items-center rounded-xl border px-1 pb-1.5 pt-2 transition ${
-                recording && pos < 0 ? 'border-brass-500/70 bg-brass-500/5' : 'border-edge bg-panel/50'
+                recording && pos < 0 ? 'border-brass-500/70 bg-brass-500/5' : 'border-white/10 bg-white/[0.05]'
               }`}
             >
               <span className="text-[10px] font-mono text-slate-500">#{i}</span>
@@ -76,7 +76,7 @@ export function BindingTracker({
         <div className="font-mono text-sm text-brass-300">{order.length ? order.join(' → ') : <span className="text-slate-500">pořadí nezaznamenáno</span>}</div>
         <div className="flex gap-2">
           {order.length > 0 && (
-            <button type="button" className="rounded-lg border border-edge px-2.5 py-1 text-xs text-slate-300" onClick={() => onChange(config, [])}>
+            <button type="button" className="rounded-lg border border-white/10 px-2.5 py-1 text-xs text-slate-300" onClick={() => onChange(config, [])}>
               Vymazat
             </button>
           )}

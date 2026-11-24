@@ -128,7 +128,7 @@ export function SimulatorPanel() {
 
       <div className="card mt-3 p-3.5">
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-steel-400">Konfigurace zámku</span>
+          <span className="text-xs font-semibold text-steel-400">Konfigurace zámku</span>
           {custom && (
             <button className="text-xs text-brass-400" onClick={newLock}>
               ← náhodný zámek
@@ -136,7 +136,7 @@ export function SimulatorPanel() {
           )}
         </div>
         {custom ? (
-          <div className="rounded-xl bg-ink-950 p-3 text-sm">
+          <div className="rounded-xl bg-black/25 p-3 text-sm">
             <div className="font-semibold text-slate-100">{custom.label ?? 'Vlastní zámek'}</div>
             <div className="mt-1 text-xs text-slate-400">
               {custom.pins} stavítek · {custom.pinTypes.filter((t) => t === 'spool').length}× spool · {custom.pinTypes.filter((t) => t === 'serrated').length}× serrated
@@ -155,7 +155,7 @@ export function SimulatorPanel() {
           </>
         )}
         <div className="mt-3">
-          <button className="flex w-full items-center justify-between rounded-xl border border-edge px-3 py-2 text-sm text-slate-300" onClick={() => setShowVault((v) => !v)}>
+          <button className="flex w-full items-center justify-between rounded-xl border border-white/10 px-3 py-2 text-sm text-slate-300" onClick={() => setShowVault((v) => !v)}>
             <span className="inline-flex items-center gap-2">
               <Icon name="lock" size={16} /> Simulovat zámek z mé sbírky
             </span>
@@ -188,16 +188,16 @@ export function SimulatorPanel() {
 
 function Counter({ label, value, max, onChange, color }: { label: string; value: number; max: number; onChange: (v: number) => void; color: string }) {
   return (
-    <div className="rounded-xl bg-ink-950 p-2.5">
+    <div className="rounded-xl bg-black/25 p-2.5">
       <div className="mb-1 text-xs text-slate-400">{label}</div>
       <div className="flex items-center justify-between">
-        <button className="h-8 w-8 rounded-lg border border-edge text-lg leading-none text-slate-300 disabled:opacity-30" disabled={value <= 0} onClick={() => onChange(value - 1)}>
+        <button className="h-8 w-8 rounded-lg border border-white/10 text-lg leading-none text-slate-300 disabled:opacity-30" disabled={value <= 0} onClick={() => onChange(value - 1)}>
           −
         </button>
         <span className="font-mono text-lg font-semibold" style={{ color }}>
           {value}
         </span>
-        <button className="h-8 w-8 rounded-lg border border-edge text-lg leading-none text-slate-300 disabled:opacity-30" disabled={value >= max} onClick={() => onChange(value + 1)}>
+        <button className="h-8 w-8 rounded-lg border border-white/10 text-lg leading-none text-slate-300 disabled:opacity-30" disabled={value >= max} onClick={() => onChange(value + 1)}>
           +
         </button>
       </div>
