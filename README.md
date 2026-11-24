@@ -12,6 +12,8 @@ npm run preview   # náhled produkčního buildu (PWA / offline funguje jen zde)
 npm run icons     # přegeneruje PNG ikony z public/icons/icon.svg (Playwright/Chromium)
 ```
 
+**Nasazení:** každý push do `main` automaticky sestaví a nasadí aplikaci na GitHub Pages (`.github/workflows/deploy.yml`) – v repu stačí jednou zapnout *Settings → Pages → Source: GitHub Actions*. Adresa: https://stepanvcelak11.github.io/Locked-/
+
 `dist/` je čistě statický – lze nasadit na GitHub Pages, Netlify, Vercel apod. (relativní `base: './'`).
 
 ## Moduly
