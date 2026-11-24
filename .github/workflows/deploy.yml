@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, claude/optimistic-thompson-0k6uah]
   workflow_dispatch:
 
 permissions:
