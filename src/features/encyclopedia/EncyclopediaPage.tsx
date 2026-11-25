@@ -7,8 +7,9 @@ import { BELTS } from '../../data/labels';
 import { ETHICS, GLOSSARY, LAW_CZ, LAW_SOURCES, LAW_UPDATED, LAW_WORLD, LOCK_TYPES, SECURITY_PINS, TOOL_GUIDE, type LawSection, type ToolGuide } from '../../data/library';
 import { COMPAT, EXTRA_TOOLS, LOCK_KINDS, fitOf, type Fit } from '../../data/compat';
 import { ToolArt, ToolMotionDemo } from '../../components/svg/ToolArt';
-import { Cutaway, GlossaryArt, LockTypeDiagram, PinProfile, P } from '../../components/svg/Diagrams';
+import { Cutaway, GlossaryArt, PinProfile, P } from '../../components/svg/Diagrams';
 import { BindingOrderDemo, ShearLineDemo } from './PhysicsDemos';
+import { EXPLAINERS, LockThumb, PICK, SceneCard, WRENCH } from '../../components/svg/LockExplainers';
 import { IOS } from '../../lib/colors';
 import { GUIDES, type Guide } from '../../data/guides';
 import type { Mechanism, PinType, ToolProfile } from '../../types';
@@ -356,9 +357,9 @@ function Compat() {
               </Chip>
             ))}
           </div>
-          <Figure caption={lt?.approach}>
-            <LockTypeDiagram mech={lock} className="mx-auto w-full max-w-sm" />
-          </Figure>
+          <div className="my-4">
+            <SceneCard n={1} scene={{ ...EXPLAINERS[lock][2], text: lt?.approach ?? EXPLAINERS[lock][2].text }} />
+          </div>
           {([2, 1] as Fit[]).map((f) => {
             const list = forLock(f);
             if (!list.length) return null;
@@ -453,9 +454,9 @@ function Physics() {
   const { navigate } = useStore();
   return (
     <div>
-      <Figure caption="Řez stavítkovým zámkem: tělo, bubínek, stavítka s pružinami a oranžová střižná rovina.">
-        <LockTypeDiagram mech="pin-tumbler" />
-      </Figure>
+      <div className="mb-4">
+        <SceneCard n={1} scene={EXPLAINERS['pin-tumbler'][1]} />
+      </div>
       <Prose>
         <p>
           Stavítkový zámek tvoří <b className="text-slate-50">tělo (shell)</b> a v něm otočný <b className="text-slate-50">bubínek (plug)</b>. Hranice mezi nimi se
@@ -517,51 +518,66 @@ function Dots({ n }: { n: number }) {
 
 function LockTypes() {
   const [open, setOpen] = useState<Mechanism | null>(null);
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [open]);
+  const cur = LOCK_TYPES.find((t) => t.id === open);
+  if (cur && cur.id !== 'other') {
+    return (
+      <motion.div key={cur.id} initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 38 }}>
+        <button onClick={() => setOpen(null)} className="-ml-1 mb-2 inline-flex items-center text-[17px] text-brass-500 active:opacity-50">
+          <Icon name="chevronLeft" size={22} strokeWidth={2.4} /> Všechny typy
+        </button>
+        <h2 className="px-1 text-[24px] font-bold leading-tight text-slate-50">{cur.name}</h2>
+        <div className="mt-1 flex items-center gap-2 px-1 text-[13px] text-slate-400">
+          Obtížnost <Dots n={cur.difficulty} />
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2 px-1 text-[13px]">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-fill px-2.5 py-1 text-slate-200">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ background: WRENCH }} /> zelená = napínák
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-fill px-2.5 py-1 text-slate-200">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ background: PICK }} /> modrá = planžeta / nástroj
+          </span>
+        </div>
+        <div className="mt-3 space-y-3">
+          {EXPLAINERS[cur.id].map((sc, i) => (
+            <SceneCard key={sc.title} n={i + 1} scene={sc} />
+          ))}
+        </div>
+        <GroupLabel>V kostce</GroupLabel>
+        <div className="card space-y-3 p-4 text-[15px] leading-relaxed text-slate-300">
+          <InfoBlock icon="pick" color={IOS.teal} title="Nástroje">
+            {cur.tools.join(' · ')}
+          </InfoBlock>
+          <InfoBlock icon="home" color={IOS.green} title="Kde ho najdeš">
+            {cur.whereFound}
+          </InfoBlock>
+          <InfoBlock icon="info" color={IOS.red} title="Slabiny">
+            {cur.weaknesses.join(' · ')}
+          </InfoBlock>
+        </div>
+      </motion.div>
+    );
+  }
   return (
-    <div className="space-y-4">
-      {LOCK_TYPES.map((t) => {
-        const isOpen = open === t.id;
-        return (
-          <Card key={t.id} className="overflow-hidden">
-            <div className="bg-well px-3 pt-3">
-              <LockTypeDiagram mech={t.id} className="mx-auto w-full max-w-sm" />
+    <div>
+      <p className="mb-3 px-1 text-[15px] text-slate-400">Vyber typ a uvidíš v animaci, jak funguje a jak se otevírá.</p>
+      <div className="grid grid-cols-2 gap-3">
+        {LOCK_TYPES.filter((t) => t.id !== 'other').map((t) => (
+          <button key={t.id} type="button" onClick={() => setOpen(t.id)} className="card overflow-hidden text-left transition active:scale-[0.98]">
+            <div className="bg-well p-1.5">
+              <LockThumb mech={t.id as Exclude<Mechanism, 'other'>} />
             </div>
-            <button className="flex w-full items-start gap-3 p-4 text-left" onClick={() => setOpen(isOpen ? null : t.id)} aria-expanded={isOpen}>
-              <div className="min-w-0 flex-1">
-                <div className="text-[17px] font-semibold text-slate-50">{t.name}</div>
-                <div className="mt-0.5 text-[15px] leading-snug text-slate-400">{t.summary}</div>
-                <div className="mt-2 flex items-center gap-2 text-[13px] text-slate-400">
-                  Obtížnost <Dots n={t.difficulty} />
-                </div>
+            <div className="p-3">
+              <div className="text-[15px] font-semibold leading-tight text-slate-50">{t.name.replace(/ \(.*\)/, '')}</div>
+              <div className="mt-1 flex items-center gap-1.5 text-[12px] text-slate-400">
+                <Dots n={t.difficulty} />
               </div>
-              <span className="mt-1 text-[15px] text-brass-500">{isOpen ? 'Méně' : 'Více'}</span>
-            </button>
-            <AnimatePresence initial={false}>
-              {isOpen && (
-                <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
-                  <div className="space-y-3 border-t border-sep px-4 pb-4 pt-3 text-[15px] leading-relaxed text-slate-300">
-                    <InfoBlock icon="layers" color={IOS.blue} title="Jak funguje">
-                      {t.howItWorks}
-                    </InfoBlock>
-                    <InfoBlock icon="home" color={IOS.green} title="Kde ho najdeš">
-                      {t.whereFound}
-                    </InfoBlock>
-                    <InfoBlock icon="target" color={IOS.orange} title="Postup">
-                      {t.approach}
-                    </InfoBlock>
-                    <InfoBlock icon="wrench" color={IOS.teal} title="Nástroje">
-                      {t.tools.join(' · ')}
-                    </InfoBlock>
-                    <InfoBlock icon="info" color={IOS.red} title="Slabiny">
-                      {t.weaknesses.join(' · ')}
-                    </InfoBlock>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </Card>
-        );
-      })}
+            </div>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

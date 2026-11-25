@@ -24,7 +24,7 @@ export const P = {
   ink: '#1C1C1E',
 };
 
-function Label({ x, y, children, anchor = 'start', color = P.label }: { x: number; y: number; children: ReactNode; anchor?: 'start' | 'middle' | 'end'; color?: string }) {
+export function Label({ x, y, children, anchor = 'start', color = P.label }: { x: number; y: number; children: ReactNode; anchor?: 'start' | 'middle' | 'end'; color?: string }) {
   return (
     <text
       x={x}
@@ -44,7 +44,7 @@ function Label({ x, y, children, anchor = 'start', color = P.label }: { x: numbe
   );
 }
 
-function Leader({ x1, y1, x2, y2 }: { x1: number; y1: number; x2: number; y2: number }) {
+export function Leader({ x1, y1, x2, y2 }: { x1: number; y1: number; x2: number; y2: number }) {
   return (
     <g>
       <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={P.label} strokeWidth={0.8} />
@@ -53,7 +53,7 @@ function Leader({ x1, y1, x2, y2 }: { x1: number; y1: number; x2: number; y2: nu
   );
 }
 
-function springPath(x: number, top: number, bottom: number, w = 6) {
+export function springPath(x: number, top: number, bottom: number, w = 6) {
   const n = 8;
   let d = `M${x} ${top}`;
   for (let i = 0; i < n; i++) d += ` L${x + (i % 2 ? -w : w)} ${top + ((i + 0.5) / n) * (bottom - top)}`;
@@ -61,7 +61,7 @@ function springPath(x: number, top: number, bottom: number, w = 6) {
 }
 
 /** Driver pin outline for the given kind, drawn in a box (x,y,w,h). */
-function driverShape(kind: PinType, x: number, y: number, w: number, h: number) {
+export function driverShape(kind: PinType, x: number, y: number, w: number, h: number) {
   const r = 1.5;
   if (kind === 'spool') {
     const n = w * 0.22;
