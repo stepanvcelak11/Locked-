@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useStore } from '../../store/AppStore';
-import { BeltBadge, Card, Chip, GroupLabel, IconTile, ListGroup, ListRow, PageHeader, SectionTitle, Segmented, SelectRow } from '../../components/ui';
+import { BeltBadge, Button, Card, Chip, GroupLabel, IconTile, ListGroup, ListRow, PageHeader, SectionTitle, Segmented, SelectRow } from '../../components/ui';
 import { Icon, isIconName, type IconName } from '../../components/Icon';
 import { BELTS } from '../../data/labels';
 import { ETHICS, GLOSSARY, LAW_CZ, LAW_SOURCES, LAW_UPDATED, LAW_WORLD, LOCK_TYPES, SECURITY_PINS, TOOL_GUIDE, type LawSection, type ToolGuide } from '../../data/library';
@@ -10,53 +10,153 @@ import { ToolArt, ToolMotionDemo } from '../../components/svg/ToolArt';
 import { Cutaway, GlossaryArt, LockTypeDiagram, PinProfile, P } from '../../components/svg/Diagrams';
 import { BindingOrderDemo, ShearLineDemo } from './PhysicsDemos';
 import { IOS } from '../../lib/colors';
+import { GUIDES, type Guide } from '../../data/guides';
 import type { Mechanism, PinType, ToolProfile } from '../../types';
 
 type Section = 'physics' | 'types' | 'security' | 'tools' | 'compat' | 'belts' | 'ethics' | 'glossary';
 
-const SECTIONS: { id: Section; title: string; desc: string; icon: IconName; color: string; group: 'basics' | 'gear' }[] = [
-  { id: 'physics', title: 'Jak funguje zámek', desc: 'Střižná rovina, tolerance, binding order', icon: 'target', color: IOS.orange, group: 'basics' },
-  { id: 'types', title: 'Typy zámků', desc: 'Stavítkové, lamelové, diskové, důlkové…', icon: 'lock', color: IOS.blue, group: 'basics' },
-  { id: 'security', title: 'Bezpečnostní stavítka', desc: 'Spool, serrated, mushroom, T-pin', icon: 'pin', color: IOS.red, group: 'basics' },
-  { id: 'glossary', title: 'Slovník pojmů', desc: 'S obrázkem u každého pojmu', icon: 'book', color: IOS.gray, group: 'basics' },
-  { id: 'tools', title: 'Katalog nástrojů', desc: 'Planžety, hrábě, napínáky + animace', icon: 'wrench', color: IOS.green, group: 'gear' },
-  { id: 'compat', title: 'Co na co?', desc: 'Který nástroj na jaký zámek', icon: 'grid', color: IOS.teal, group: 'gear' },
-  { id: 'belts', title: 'Pásy obtížnosti', desc: 'Komunitní žebříček zámků', icon: 'trophy', color: IOS.yellow, group: 'gear' },
-  { id: 'ethics', title: 'Zákony a etický kodex', desc: 'Co smíš, co ne a proč', icon: 'shield', color: IOS.indigo, group: 'gear' },
+const SECTIONS: { id: Section; title: string; desc: string; icon: IconName; color: string }[] = [
+  { id: 'physics', title: 'Jak funguje zámek', desc: 'Střižná rovina a proč stavítka tuhnou', icon: 'target', color: IOS.orange },
+  { id: 'tools', title: 'Nástroje', desc: 'Planžety, hrábě, napínáky s animací', icon: 'pick', color: IOS.green },
+  { id: 'compat', title: 'Co na co?', desc: 'Který nástroj na jaký zámek', icon: 'grid', color: IOS.teal },
+  { id: 'types', title: 'Typy zámků', desc: 'Stavítkové, lamelové, diskové…', icon: 'lock', color: IOS.blue },
+  { id: 'security', title: 'Bezpečnostní stavítka', desc: 'Spool, serrated, mushroom, T-pin', icon: 'pin', color: IOS.red },
+  { id: 'belts', title: 'Pásy obtížnosti', desc: 'Žebříček zámků od bílé po černou', icon: 'trophy', color: '#d4a017' },
+  { id: 'glossary', title: 'Slovník pojmů', desc: '22 pojmů s obrázkem', icon: 'book', color: IOS.gray },
+  { id: 'ethics', title: 'Pravidla a zákony', desc: 'Co smíš, co ne a proč', icon: 'shield', color: IOS.indigo },
 ];
 
+/** The beginner path: a mix of sections and step-by-step guides, in reading order. */
+const PATH: { ref: string; title: string; sub: string }[] = [
+  { ref: 'ethics', title: 'Pravidla a zákony', sub: '2 minuty, než vůbec začneš' },
+  { ref: 'physics', title: 'Jak funguje zámek', sub: 'Proč se dá otevřít bez klíče' },
+  { ref: 'tools', title: 'Nástroje', sub: 'Co je planžeta a co napínák' },
+  { ref: 'g:first-open', title: 'Tvoje první otevření', sub: 'Návod krok za krokem' },
+  { ref: 'g:tension', title: 'Správné napětí', sub: 'Nejdůležitější dovednost' },
+  { ref: 'g:spools', title: 'Spool a falešné otevření', sub: 'První bezpečnostní stavítka' },
+];
+
+const DONE_KEY = 'locked.read';
+function loadDone(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(DONE_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
 
 export function EncyclopediaPage() {
   const { intent, consumeIntent } = useStore();
-  const [section, setSection] = useState<Section | null>(null);
+  const [section, setSection] = useState<string | null>(null);
+  const [done, setDone] = useState<string[]>(loadDone);
+
+  const markDone = (ref: string) =>
+    setDone((d) => {
+      if (d.includes(ref)) return d;
+      const next = [...d, ref];
+      try {
+        localStorage.setItem(DONE_KEY, JSON.stringify(next));
+      } catch {
+        /* private mode */
+      }
+      return next;
+    });
 
   useEffect(() => {
     if (intent?.tab === 'library' && intent.library) {
-      setSection(intent.library as Section);
+      setSection(intent.library);
       consumeIntent();
     }
   }, [intent, consumeIntent]);
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
+    if (section && !section.startsWith('g:')) markDone(section);
   }, [section]);
 
+  const guide = section?.startsWith('g:') ? GUIDES.find((g) => g.id === section.slice(2)) : undefined;
   const cur = SECTIONS.find((s) => s.id === section);
 
+  if (guide) return <GuideView guide={guide} onBack={() => setSection(null)} onDone={() => markDone(`g:${guide.id}`)} />;
+
   if (!cur) {
+    const doneCount = PATH.filter((p) => done.includes(p.ref)).length;
+    const next = PATH.find((p) => !done.includes(p.ref));
     return (
       <motion.div key="index" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-        <PageHeader title="Encyklopedie" />
-        <CompatTeaser onOpen={() => setSection('compat')} />
-        <GroupLabel>Základy</GroupLabel>
-        <ListGroup>
-          {SECTIONS.filter((s) => s.group === 'basics').map((s, i, arr) => (
-            <ListRow key={s.id} icon={s.icon} color={s.color} title={s.title} sub={s.desc} onClick={() => setSection(s.id)} last={i === arr.length - 1} />
+        <PageHeader title="Návody" subtitle="Od úplných začátků po bezpečnostní stavítka" />
+
+        {/* Beginner path */}
+        <div className="card overflow-hidden">
+          <div className="px-4 pb-3 pt-4" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--tint) 18%, transparent), transparent)' }}>
+            <div className="flex items-center justify-between">
+              <span className="text-[20px] font-bold text-slate-50">Začni tady</span>
+              <span className="text-[13px] font-semibold text-brass-500">
+                {doneCount} z {PATH.length}
+              </span>
+            </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-fill">
+              <motion.div className="h-full rounded-full bg-brass-500" animate={{ width: `${(doneCount / PATH.length) * 100}%` }} />
+            </div>
+          </div>
+          {PATH.map((p, i) => {
+            const isDone = done.includes(p.ref);
+            const isNext = next?.ref === p.ref;
+            return (
+              <button
+                key={p.ref}
+                type="button"
+                onClick={() => setSection(p.ref)}
+                className={`relative flex w-full items-center gap-3 px-4 py-2.5 text-left transition active:bg-fill ${isNext ? 'bg-brass-500/[0.07]' : ''}`}
+              >
+                <span
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[15px] font-bold ${
+                    isDone ? 'bg-ok text-white' : isNext ? 'bg-brass-500 text-white' : 'bg-fill text-slate-400'
+                  }`}
+                >
+                  {isDone ? <Icon name="check" size={16} strokeWidth={3} /> : i + 1}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className={`block text-[16px] ${isDone ? 'text-slate-400' : 'text-slate-50'} ${isNext ? 'font-semibold' : ''}`}>{p.title}</span>
+                  <span className="block text-[13px] text-slate-400">{p.sub}</span>
+                </span>
+                {isNext && <span className="rounded-full bg-brass-500 px-2.5 py-1 text-[12px] font-semibold text-white">Pokračovat</span>}
+                <Icon name="chevronRight" size={16} strokeWidth={2.6} className="shrink-0 text-slate-600" />
+                {i < PATH.length - 1 && <span className="absolute bottom-0 left-[60px] right-0 h-px bg-sep" />}
+              </button>
+            );
+          })}
+        </div>
+
+        <GroupLabel>Návody krok za krokem</GroupLabel>
+        <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1 scrollbar-none">
+          {GUIDES.map((g) => (
+            <button
+              key={g.id}
+              type="button"
+              onClick={() => setSection(`g:${g.id}`)}
+              className="relative flex w-[44%] min-w-[150px] shrink-0 snap-start flex-col overflow-hidden rounded-[1.125rem] p-3.5 text-left text-white transition active:scale-[0.97]"
+              style={{ background: `linear-gradient(150deg, ${g.color}, color-mix(in srgb, ${g.color} 70%, #000))` }}
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20">
+                <Icon name={g.icon} size={21} strokeWidth={2.2} />
+              </span>
+              <span className="mt-6 text-[16px] font-semibold leading-tight">{g.title}</span>
+              <span className="mt-1 text-[12px] text-white/80">
+                {g.steps.length} kroků · {g.minutes} min
+              </span>
+              {done.includes(`g:${g.id}`) && (
+                <span className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-white text-[#248a3d]">
+                  <Icon name="check" size={14} strokeWidth={3} />
+                </span>
+              )}
+            </button>
           ))}
-        </ListGroup>
-        <GroupLabel>Výbava a pravidla</GroupLabel>
+        </div>
+
+        <GroupLabel>Příručka</GroupLabel>
         <ListGroup>
-          {SECTIONS.filter((s) => s.group === 'gear').map((s, i, arr) => (
+          {SECTIONS.map((s, i, arr) => (
             <ListRow key={s.id} icon={s.icon} color={s.color} title={s.title} sub={s.desc} onClick={() => setSection(s.id)} last={i === arr.length - 1} />
           ))}
         </ListGroup>
@@ -67,9 +167,12 @@ export function EncyclopediaPage() {
   return (
     <motion.div key={cur.id} initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 38 }}>
       <button onClick={() => setSection(null)} className="-ml-1 mb-1 inline-flex items-center text-[17px] text-brass-500 active:opacity-50">
-        <Icon name="chevronLeft" size={22} strokeWidth={2.4} /> Encyklopedie
+        <Icon name="chevronLeft" size={22} strokeWidth={2.4} /> Návody
       </button>
-      <PageHeader title={cur.title} />
+      <div className="mb-4 flex items-center gap-3 px-1">
+        <IconTile icon={cur.icon} color={cur.color} size={40} />
+        <h1 className="font-display text-[30px] font-bold leading-tight text-slate-50">{cur.title}</h1>
+      </div>
       {cur.id === 'physics' && <Physics />}
       {cur.id === 'types' && <LockTypes />}
       {cur.id === 'security' && <SecurityPins />}
@@ -78,6 +181,91 @@ export function EncyclopediaPage() {
       {cur.id === 'belts' && <Belts />}
       {cur.id === 'ethics' && <Ethics />}
       {cur.id === 'glossary' && <Glossary />}
+    </motion.div>
+  );
+}
+
+/* ───────────────────────── Step-by-step guide ───────────────────────── */
+
+function GuideView({ guide, onBack, onDone }: { guide: Guide; onBack: () => void; onDone: () => void }) {
+  const { navigate } = useStore();
+  const [i, setI] = useState(0);
+  const step = guide.steps[i];
+  const lastStep = i === guide.steps.length - 1;
+  useEffect(() => {
+    if (lastStep) onDone();
+  }, [lastStep]);
+  const practice = guide.practice;
+  return (
+    <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 38 }}>
+      <button onClick={onBack} className="-ml-1 mb-1 inline-flex items-center text-[17px] text-brass-500 active:opacity-50">
+        <Icon name="chevronLeft" size={22} strokeWidth={2.4} /> Návody
+      </button>
+      <div className="mb-3 flex items-center gap-3 px-1">
+        <IconTile icon={guide.icon} color={guide.color} size={40} />
+        <div className="min-w-0">
+          <h1 className="font-display text-[26px] font-bold leading-tight text-slate-50">{guide.title}</h1>
+          <p className="text-[13px] text-slate-400">{guide.desc}</p>
+        </div>
+      </div>
+
+      {/* step dots */}
+      <div className="mb-3 flex gap-1.5 px-1">
+        {guide.steps.map((_, k) => (
+          <button
+            key={k}
+            onClick={() => setI(k)}
+            aria-label={`Krok ${k + 1}`}
+            className="h-1.5 flex-1 rounded-full transition-colors"
+            style={{ background: k <= i ? guide.color : 'var(--color-fill-strong)' }}
+          />
+        ))}
+      </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div key={i} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.18 }} className="card overflow-hidden">
+          {step.art && (
+            <div className="bg-well p-3">
+              <GlossaryArt id={step.art} />
+            </div>
+          )}
+          <div className="p-4">
+            <div className="text-[13px] font-semibold" style={{ color: guide.color }}>
+              Krok {i + 1} z {guide.steps.length}
+            </div>
+            <h2 className="mt-0.5 text-[22px] font-bold leading-tight text-slate-50">{step.title}</h2>
+            <p className="mt-2 text-[16px] leading-relaxed text-slate-300">{step.text}</p>
+            {step.tip && (
+              <div className="mt-3 flex gap-2.5 rounded-2xl bg-fill px-3.5 py-3 text-[15px] text-slate-200">
+                <Icon name="sparkles" size={18} className="mt-0.5 shrink-0" style={{ color: guide.color }} />
+                <span>{step.tip}</span>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </AnimatePresence>
+
+      <div className="mt-4 grid grid-cols-[auto_1fr] gap-2">
+        <Button onClick={() => (i === 0 ? onBack() : setI(i - 1))} icon="chevronLeft" aria-label="Zpět" />
+        {!lastStep ? (
+          <Button variant="brass" size="lg" onClick={() => setI(i + 1)}>
+            Další krok
+          </Button>
+        ) : practice ? (
+          <Button
+            variant="brass"
+            size="lg"
+            icon={practice === 'timer' ? 'timer' : 'gamepad'}
+            onClick={() => (practice === 'timer' ? navigate('timer') : navigate('arcade', { arcade: practice }))}
+          >
+            {practice === 'timer' ? 'Zkusit se stopkami' : practice === 'quiz' ? 'Otestovat se v kvízu' : 'Vyzkoušet v simulátoru'}
+          </Button>
+        ) : (
+          <Button variant="brass" size="lg" icon="check" onClick={onBack}>
+            Hotovo
+          </Button>
+        )}
+      </div>
     </motion.div>
   );
 }
@@ -111,19 +299,6 @@ const GROUPS: { id: ToolGuide['group'] | 'diamond'; label: string; tools: ToolPr
   { id: 'special', label: 'Speciál', tools: ['disc-pick', 'tubular-pick', 'wafer-jiggler'] },
 ];
 const groupFit = (tools: ToolProfile[], lock: Exclude<Mechanism, 'other'>): Fit => Math.max(0, ...tools.map((t) => fitOf(t, lock))) as Fit;
-
-function CompatTeaser({ onOpen }: { onOpen: () => void }) {
-  return (
-    <button type="button" onClick={onOpen} className="card block w-full p-4 text-left transition active:opacity-70">
-      <div className="flex items-center justify-between">
-        <span className="text-[17px] font-semibold text-slate-50">Co na co?</span>
-        <span className="text-[15px] text-brass-500">Celý přehled</span>
-      </div>
-      <p className="text-[13px] text-slate-400">Který nástroj se hodí na jaký zámek</p>
-      <CompatTable rows={LOCK_KINDS.slice(0, 3)} compact />
-    </button>
-  );
-}
 
 function CompatTable({ rows = LOCK_KINDS, compact = false }: { rows?: typeof LOCK_KINDS; compact?: boolean }) {
   return (

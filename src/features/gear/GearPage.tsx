@@ -1,9 +1,8 @@
-import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../../store/AppStore';
 import type { Belt, LockFormFactor, LockItem, Mechanism, ToolCategory, ToolItem, ToolProfile, ToolThickness, WrenchPosition } from '../../types';
-import { BELTS, FORM_FACTORS, MECHANISMS, PIN_TYPES, THICKNESSES, TOOL_CATEGORIES, TOOL_PROFILES, beltRank, thicknessLabel } from '../../data/labels';
-import { BeltBadge, Button, Card, Chip, Empty, Field, PageHeader, Segmented, Sheet } from '../../components/ui';
+import { BELTS, FORM_FACTORS, MECHANISMS, PIN_TYPES, THICKNESSES, TOOL_CATEGORIES, TOOL_PROFILES, thicknessLabel } from '../../data/labels';
+import { BeltBadge, Button, Card, Chip, Empty, Field, GroupLabel, ListGroup, PageHeader, Segmented, Sheet } from '../../components/ui';
 import { Icon } from '../../components/Icon';
 import { BindingTracker } from './BindingTracker';
 import { ToolArt } from '../../components/svg/ToolArt';
@@ -24,16 +23,16 @@ export function GearPage() {
   }, [intent, consumeIntent]);
   return (
     <div>
-      <PageHeader title="Moje výbava" subtitle="Sbírka zámků a arzenál nástrojů" />
+      <PageHeader title="Výbava" subtitle="Tvoje zámky a nástroje" />
       <Segmented
         value={tab}
         onChange={setTab}
         options={[
-          { id: 'locks', label: 'Sbírka zámků' },
-          { id: 'tools', label: 'Arzenál' },
+          { id: 'locks', label: 'Zámky' },
+          { id: 'tools', label: 'Nástroje' },
         ]}
       />
-      <div className="mt-4">{tab === 'locks' ? <LockVault /> : <Arsenal />}</div>
+      <div className="mt-2">{tab === 'locks' ? <LockVault /> : <Arsenal />}</div>
     </div>
   );
 }
@@ -45,10 +44,9 @@ function emptyLock(): Omit<LockItem, 'id' | 'createdAt'> {
 }
 
 function LockVault() {
-  const { data, navigate, setTimerConfig } = useStore();
+  const { data } = useStore();
   const [edit, setEdit] = useState<(Omit<LockItem, 'id' | 'createdAt'> & { id?: string; createdAt?: number }) | null>(null);
-  const [sort, setSort] = useState<'belt' | 'name' | 'recent'>('belt');
-  const [beltFilter, setBeltFilter] = useState<Belt | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const stats = useMemo(() => {
     const m = new Map<string, ReturnType<typeof summarize>>();
@@ -56,144 +54,181 @@ function LockVault() {
     return m;
   }, [data.locks, data.solves]);
 
-  const locks = useMemo(() => {
-    const l = data.locks.filter((x) => !beltFilter || x.belt === beltFilter);
-    if (sort === 'belt') return [...l].sort((a, b) => beltRank(a.belt) - beltRank(b.belt) || a.name.localeCompare(b.name));
-    if (sort === 'name') return [...l].sort((a, b) => `${a.brand}${a.name}`.localeCompare(`${b.brand}${b.name}`));
-    return [...l].sort((a, b) => b.createdAt - a.createdAt);
-  }, [data.locks, sort, beltFilter]);
-
-  const beltsPresent = BELTS.filter((b) => data.locks.some((l) => l.belt === b.id));
+  // grouped by belt, easiest first – reads like a ladder you climb
+  const groups = useMemo(
+    () =>
+      BELTS.map((b) => ({ belt: b, locks: data.locks.filter((l) => l.belt === b.id).sort((a, c) => `${a.brand}${a.name}`.localeCompare(`${c.brand}${c.name}`)) })).filter(
+        (g) => g.locks.length,
+      ),
+    [data.locks],
+  );
 
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
-          <Chip active={!beltFilter} onClick={() => setBeltFilter(null)}>
-            Vše ({data.locks.length})
-          </Chip>
-          {beltsPresent.map((b) => (
-            <Chip key={b.id} active={beltFilter === b.id} onClick={() => setBeltFilter(beltFilter === b.id ? null : b.id)}>
-              <span className="mr-1 inline-block h-2 w-2 rounded-full" style={{ background: b.color }} />
-              {b.label}
-            </Chip>
-          ))}
-        </div>
-        <select className="field w-auto py-1.5 text-xs" value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}>
-          <option value="belt">Dle pásu</option>
-          <option value="name">Dle názvu</option>
-          <option value="recent">Nejnovější</option>
-        </select>
-      </div>
-
-      {locks.length === 0 ? (
+      {data.locks.length === 0 ? (
         <Empty icon="lock" title="Sbírka je prázdná">
-          Přidej svůj první zámek – můžeš u něj sledovat časy i binding order.
+          Přidej svůj první zámek – můžeš u něj sledovat časy i pořadí stavítek.
         </Empty>
       ) : (
-        <div className="space-y-3">
-          <AnimatePresence>
-            {locks.map((l) => {
-              const st = stats.get(l.id)!;
-              const security = l.pinConfig.filter((p) => p.type !== 'standard' && p.type !== 'unknown');
-              return (
-                <motion.div key={l.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}>
-                  <Card className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-slate-100">
-                            {l.brand} {l.name}
-                          </span>
-                          {l.favorite && <Icon name="star" size={14} className="fill-brass-400 text-brass-400" />}
-                        </div>
-                        <div className="mt-0.5 text-xs text-slate-400">
-                          {MECHANISMS[l.mechanism]} · {FORM_FACTORS[l.formFactor]} · {l.pins} {l.mechanism === 'disc-detainer' ? 'disků' : 'pinů'}
-                          {l.keyway ? ` · ${l.keyway}` : ''}
-                        </div>
-                      </div>
-                      <BeltBadge belt={l.belt} size="sm" />
-                    </div>
-                    <div className="mt-3 flex items-center gap-1">
-                      {Array.from({ length: l.pins }, (_, k) => k + 1).map((i) => {
-                        const t = l.pinConfig.find((p) => p.index === i)?.type ?? 'unknown';
-                        const pos = l.bindingOrder.indexOf(i);
-                        return (
-                          <div key={i} className="flex flex-1 flex-col items-center rounded-lg bg-well py-1.5" title={PIN_TYPES[t].label}>
-                            <span className="text-[9px] font-semibold" style={{ color: PIN_TYPES[t].color }}>
-                              {PIN_TYPES[t].short}
-                            </span>
-                            <span className="font-mono text-[10px] text-slate-500">{pos >= 0 ? `#${pos + 1}` : '·'}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
-                      <div>
-                        <div className="text-slate-500">PB</div>
-                        <div className="font-mono text-brass-300">{formatTime(st.best)}</div>
-                      </div>
-                      <div>
-                        <div className="text-slate-500">Ao5</div>
-                        <div className="font-mono">{formatTime(st.averages[0].current)}</div>
-                      </div>
-                      <div>
-                        <div className="text-slate-500">Otevřeno</div>
-                        <div className="font-mono">
-                          {st.solved}/{st.count}
-                        </div>
-                      </div>
-                    </div>
-                    {l.notes && <p className="mt-2 flex items-start gap-1.5 rounded-lg bg-well px-2.5 py-1.5 text-[13px] text-slate-400"><Icon name="note" size={14} className="mt-0.5 shrink-0" /> {l.notes}</p>}
-                    {security.length > 0 && (
-                      <div className="mt-2 text-[11px] text-slate-500">
-                        Bezpečnostní: {security.map((p) => `#${p.index} ${PIN_TYPES[p.type].short}`).join(', ')}
-                      </div>
-                    )}
-                    <div className="mt-3 flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="brass"
-                        icon="timer"
-                        className="flex-1"
-                        onClick={() => {
-                          setTimerConfig({ lockId: l.id });
-                          navigate('timer');
-                        }}
-                      >
-                        Trénovat
-                      </Button>
-                      {l.mechanism === 'pin-tumbler' && (
-                        <Button size="sm" icon="gamepad" onClick={() => navigate('arcade', { arcade: 'simulator', sim: { spec: specFromLock(l) } })}>
-                          Simulovat
-                        </Button>
-                      )}
-                      <Button size="sm" icon="edit" onClick={() => setEdit(l)} aria-label="Upravit" />
-                    </div>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </div>
+        groups.map((g) => (
+          <div key={g.belt.id}>
+            <GroupLabel>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: g.belt.color, boxShadow: 'inset 0 0 0 1px rgba(120,120,128,0.35)' }} />
+                {g.belt.label} pás
+              </span>
+            </GroupLabel>
+            <ListGroup>
+              {g.locks.map((l, i) => {
+                const st = stats.get(l.id)!;
+                const security = l.pinConfig.filter((p) => p.type !== 'standard' && p.type !== 'unknown').length;
+                return (
+                  <button
+                    key={l.id}
+                    type="button"
+                    onClick={() => setOpenId(l.id)}
+                    className="relative flex w-full items-center gap-3 px-4 py-2.5 text-left transition active:bg-fill"
+                  >
+                    <LockTile belt={l.belt} />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-1.5 text-[16px] text-slate-50">
+                        <span className="truncate">
+                          {l.brand} {l.name}
+                        </span>
+                        {l.favorite && <Icon name="star" size={13} className="shrink-0 fill-brass-400 text-brass-400" />}
+                      </span>
+                      <span className="block text-[13px] text-slate-400">
+                        {l.pins} {l.mechanism === 'disc-detainer' ? 'disků' : 'pinů'}
+                        {security ? ` · ${security} bezpečnostní` : ''}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-right">
+                      <span className="block font-mono text-[15px] font-semibold text-slate-50">{formatTime(st.best, { dnfLabel: '—' })}</span>
+                      <span className="block text-[11px] text-slate-500">rekord</span>
+                    </span>
+                    <Icon name="chevronRight" size={16} strokeWidth={2.6} className="shrink-0 text-slate-600" />
+                    {i < g.locks.length - 1 && <span className="absolute bottom-0 left-[64px] right-0 h-px bg-sep" />}
+                  </button>
+                );
+              })}
+            </ListGroup>
+          </div>
+        ))
       )}
-      <Button variant="brass" size="lg" icon="plus" className="mt-4 w-full" onClick={() => setEdit(emptyLock())}>
+      <Button variant="brass" size="lg" icon="plus" className="mt-5 w-full" onClick={() => setEdit(emptyLock())}>
         Přidat zámek
       </Button>
+      <LockDetail
+        lock={data.locks.find((l) => l.id === openId) ?? null}
+        onClose={() => setOpenId(null)}
+        onEdit={(l) => {
+          setOpenId(null);
+          setEdit(l);
+        }}
+      />
       <LockForm value={edit} onClose={() => setEdit(null)} />
-      {data.locks.length > 0 && (
-        <p className="mt-3 text-center text-xs text-slate-500">
-          Nejrychlejší otevření ve sbírce:{' '}
-          {formatTime(
-            Math.min(
-              ...data.solves.filter((s) => data.locks.some((l) => l.id === s.lockId)).map(effectiveTime),
-              Infinity,
-            ),
-            { dnfLabel: '—' },
-          )}
-        </p>
-      )}
     </div>
+  );
+}
+
+function LockTile({ belt }: { belt: Belt }) {
+  const b = BELTS.find((x) => x.id === belt) ?? BELTS[0];
+  return (
+    <span
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]"
+      style={{ background: b.color, color: b.text, boxShadow: belt === 'white' || belt === 'black' ? 'inset 0 0 0 1px rgba(120,120,128,0.35)' : undefined }}
+    >
+      <Icon name="lock" size={20} strokeWidth={2.2} />
+    </span>
+  );
+}
+
+function LockDetail({ lock: l, onClose, onEdit }: { lock: LockItem | null; onClose: () => void; onEdit: (l: LockItem) => void }) {
+  const { data, navigate, setTimerConfig } = useStore();
+  const st = useMemo(() => (l ? summarize(data.solves.filter((s) => s.lockId === l.id)) : null), [l, data.solves]);
+  return (
+    <Sheet open={!!l} onClose={onClose} title={l ? `${l.brand} ${l.name}` : ''}>
+      {l && st && (
+        <div>
+          <div className="flex items-center gap-3">
+            <LockTile belt={l.belt} />
+            <div className="min-w-0 flex-1 text-[13px] text-slate-400">
+              {MECHANISMS[l.mechanism]} · {FORM_FACTORS[l.formFactor]}
+              {l.keyway ? ` · ${l.keyway}` : ''}
+            </div>
+            <BeltBadge belt={l.belt} size="sm" />
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+            {[
+              ['Rekord', formatTime(st.best, { dnfLabel: '—' })],
+              ['Průměr z 5', formatTime(st.averages[0].current, { dnfLabel: '—' })],
+              ['Otevřeno', `${st.solved}/${st.count}`],
+            ].map(([k, v]) => (
+              <div key={k} className="rounded-2xl bg-well px-2 py-2.5">
+                <div className="text-[12px] text-slate-400">{k}</div>
+                <div className="font-mono text-[17px] font-semibold text-slate-50">{v}</div>
+              </div>
+            ))}
+          </div>
+
+          <GroupLabel>Stavítka a pořadí</GroupLabel>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: l.pins }, (_, k) => k + 1).map((i) => {
+              const t = l.pinConfig.find((p) => p.index === i)?.type ?? 'unknown';
+              const pos = l.bindingOrder.indexOf(i);
+              return (
+                <div key={i} className="flex flex-1 flex-col items-center rounded-xl bg-well py-2" title={PIN_TYPES[t].label}>
+                  <span className="text-[11px] font-bold" style={{ color: PIN_TYPES[t].color }}>
+                    {PIN_TYPES[t].short}
+                  </span>
+                  <span className="font-mono text-[12px] text-slate-500">{pos >= 0 ? `#${pos + 1}` : '·'}</span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-1.5 px-1 text-[12px] text-slate-500">Nahoře typ stavítka, dole pořadí, v jakém tuhnou.</p>
+
+          {l.notes && (
+            <>
+              <GroupLabel>Poznámky</GroupLabel>
+              <p className="rounded-2xl bg-well px-3.5 py-3 text-[15px] text-slate-300">{l.notes}</p>
+            </>
+          )}
+
+          <div className="mt-5 grid gap-2">
+            <Button
+              variant="brass"
+              size="lg"
+              icon="timer"
+              onClick={() => {
+                setTimerConfig({ lockId: l.id });
+                onClose();
+                navigate('timer');
+              }}
+            >
+              Měřit na stopkách
+            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              {l.mechanism === 'pin-tumbler' && (
+                <Button
+                  icon="gamepad"
+                  onClick={() => {
+                    onClose();
+                    navigate('arcade', { arcade: 'simulator', sim: { spec: specFromLock(l) } });
+                  }}
+                >
+                  Simulovat
+                </Button>
+              )}
+              <Button icon="edit" className={l.mechanism === 'pin-tumbler' ? '' : 'col-span-2'} onClick={() => onEdit(l)}>
+                Upravit
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </Sheet>
   );
 }
 

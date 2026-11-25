@@ -10,14 +10,14 @@ import { sound } from '../lib/audio';
 import { ETHICS } from '../data/library';
 
 const NAV: { id: TabId; label: string; icon: IconName }[] = [
-  { id: 'timer', label: 'Stopky', icon: 'timer' },
+  { id: 'library', label: 'Návody', icon: 'book' },
   { id: 'arcade', label: 'Trénink', icon: 'gamepad' },
-  { id: 'library', label: 'Encyklopedie', icon: 'book' },
-  { id: 'gear', label: 'Výbava', icon: 'toolbox' },
+  { id: 'timer', label: 'Stopky', icon: 'timer' },
   { id: 'stats', label: 'Statistiky', icon: 'chart' },
+  { id: 'gear', label: 'Výbava', icon: 'toolbox' },
 ];
 
-/** iOS tab bar: translucent, hairline on top, tint for the active tab. */
+/** Tab bar: Stopky sits in the middle as a raised button, the rest are iOS tabs tinted with their section colour. */
 export function BottomNav() {
   const { tab, navigate } = useStore();
   return (
@@ -25,18 +25,35 @@ export function BottomNav() {
       <div className="mx-auto flex max-w-2xl">
         {NAV.map((n) => {
           const active = tab === n.id;
+          const go = () => {
+            sound.unlock();
+            navigate(n.id);
+          };
+          if (n.id === 'timer') {
+            return (
+              <button key={n.id} onClick={go} className="flex flex-1 flex-col items-center pb-1.5 text-[10px] font-semibold" aria-current={active ? 'page' : undefined} aria-label={n.label}>
+                <motion.span
+                  className="-mt-5 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-[0_6px_16px_rgba(0,122,255,0.35)] ring-4 ring-[var(--color-ink-950)]"
+                  style={{ background: 'linear-gradient(160deg, #3d9bff, #0062e6)' }}
+                  animate={{ scale: active ? 1.05 : 1 }}
+                  whileTap={{ scale: 0.92 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+                >
+                  <Icon name={n.icon} size={28} strokeWidth={2.2} />
+                </motion.span>
+                <span className={`mt-0.5 ${active ? 'text-brass-500' : 'text-slate-500'}`}>{n.label}</span>
+              </button>
+            );
+          }
           return (
             <button
               key={n.id}
-              onClick={() => {
-                sound.unlock();
-                navigate(n.id);
-              }}
+              onClick={go}
               className={`flex flex-1 flex-col items-center gap-0.5 pb-1.5 pt-2 text-[10px] font-medium transition-colors ${active ? 'text-brass-500' : 'text-slate-500'}`}
               aria-current={active ? 'page' : undefined}
             >
-              <motion.span animate={{ scale: active ? 1.06 : 1 }} transition={{ type: 'spring', stiffness: 500, damping: 30 }}>
-                <Icon name={n.icon} size={25} strokeWidth={active ? 2.3 : 1.9} />
+              <motion.span animate={{ scale: active ? 1.08 : 1 }} transition={{ type: 'spring', stiffness: 500, damping: 30 }}>
+                <Icon name={n.icon} size={25} strokeWidth={active ? 2.2 : 1.8} duotone={active} />
               </motion.span>
               {n.label}
             </button>
@@ -75,7 +92,7 @@ export function LogoMark({ size = 28 }: { size?: number }) {
   );
 }
 
-const TITLES: Record<TabId, string> = { timer: 'Stopky', arcade: 'Trénink', library: 'Encyklopedie', gear: 'Výbava', stats: 'Statistiky' };
+const TITLES: Record<TabId, string> = { timer: 'Stopky', arcade: 'Trénink', library: 'Návody', gear: 'Výbava', stats: 'Statistiky' };
 
 /** iOS navigation bar: transparent over the large title, blurred with a compact title once scrolled. */
 export function TopBar() {

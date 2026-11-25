@@ -64,7 +64,9 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     const h = location.hash.replace('#', '') as TabId;
     if (TABS.includes(h)) return h;
     const s = localStorage.getItem(TAB_KEY) as TabId | null;
-    return s && TABS.includes(s) ? s : 'timer';
+    if (s && TABS.includes(s)) return s;
+    // newcomers start with the guides; anyone with measured attempts with the timer
+    return loadData().solves.length ? 'timer' : 'library';
   });
   const [intent, setIntent] = useState<NavIntent | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);

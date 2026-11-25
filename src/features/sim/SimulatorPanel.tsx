@@ -90,6 +90,7 @@ export function SimulatorPanel() {
     }
   };
 
+  const [showConfig, setShowConfig] = useState(false);
   const newLock = () => {
     setCustom(null);
     setSeed(Math.floor(Math.random() * 1e9));
@@ -128,11 +129,21 @@ export function SimulatorPanel() {
       <LockSimulator key={`${spec.seed}-${spec.pins}-${blind}-${spec.label ?? ''}`} spec={spec} blind={blind} initialTool={tool} onOpen={onOpen} />
 
       <div className="card mt-3 p-3.5">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-semibold text-steel-400">Konfigurace zámku</span>
+        <button className="flex w-full items-center justify-between text-left" onClick={() => setShowConfig((v) => !v)}>
+          <span>
+            <span className="block text-[16px] font-semibold text-slate-50">Upravit zámek</span>
+            <span className="block text-[13px] text-slate-400">
+              {custom ? (custom.label ?? 'Vlastní zámek') : `${pins} stavítek · ${spools}× spool · ${serrated}× serrated`}
+            </span>
+          </span>
+          <Icon name="chevronDown" size={18} className={`text-slate-500 transition ${showConfig ? 'rotate-180' : ''}`} />
+        </button>
+        {showConfig && (
+        <div className="mt-3">
+        <div className="mb-2 flex items-center justify-end">
           {custom && (
             <button className="text-xs text-brass-400" onClick={newLock}>
-              ← náhodný zámek
+              Zpět na náhodný zámek
             </button>
           )}
         </div>
@@ -181,7 +192,8 @@ export function SimulatorPanel() {
           )}
         </div>
       </div>
-
+        )}
+      </div>
       <Legend />
     </div>
   );

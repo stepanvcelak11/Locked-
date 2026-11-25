@@ -180,7 +180,13 @@ export function Sheet({
   return (
     <AnimatePresence>
       {open && (
-        <motion.div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+        <motion.div
+          className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          // stop catching taps the moment the sheet starts closing, even if the exit animation never reports completion
+          exit={{ opacity: 0, pointerEvents: 'none' }}
+        >
           <div className="absolute inset-0 bg-black/40" onClick={onClose} />
           <motion.div
             role="dialog"

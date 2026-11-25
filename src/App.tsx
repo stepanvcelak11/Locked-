@@ -38,8 +38,14 @@ function ThemeSync() {
 
 function Screens() {
   const { tab } = useStore();
+  useEffect(() => {
+    document.documentElement.dataset.section = tab;
+  }, [tab]);
   return (
-    <main className="mx-auto max-w-2xl px-4 pb-[calc(6rem+var(--safe-bottom))] pt-0">
+    <>
+    {/* soft wash of the section colour behind the large title */}
+    <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-72" style={{ background: 'linear-gradient(180deg, color-mix(in srgb, var(--tint) 16%, transparent), transparent)' }} />
+    <main className="relative mx-auto max-w-2xl px-4 pb-[calc(6rem+var(--safe-bottom))] pt-0">
       <motion.div key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }}>
           <Suspense fallback={<Loading />}>
             {tab === 'timer' && <TimerPage />}
@@ -50,6 +56,7 @@ function Screens() {
           </Suspense>
       </motion.div>
     </main>
+    </>
   );
 }
 

@@ -5,7 +5,7 @@ import { formatSolve, formatTime, formatDate, relativeDay } from '../../lib/form
 import { effectiveTime, summarize } from '../../lib/stats';
 import { sound } from '../../lib/audio';
 import { vibrate } from '../../lib/haptics';
-import { BeltBadge, Button, Card, IconTile, ListGroup, PageHeader, SectionTitle, Segmented, SelectRow, Sheet } from '../../components/ui';
+import { BeltBadge, Button, Card, GroupLabel, IconTile, ListGroup, ListRow, PageHeader, SectionTitle, Segmented, SelectRow, Sheet, Switch } from '../../components/ui';
 import { IOS } from '../../lib/colors';
 import { Icon } from '../../components/Icon';
 import { TECHNIQUES, TOOL_PROFILES, thicknessLabel } from '../../data/labels';
@@ -16,16 +16,16 @@ import { useWakeLock } from './useWakeLock';
 type Phase = 'idle' | 'inspect' | 'holding' | 'ready' | 'running' | 'stopped';
 
 export function TimerPage() {
-  const { data, setTimerConfig, addSolve, updateSolve, deleteSolve, updateSettings } = useStore();
+  const { data, addSolve, updateSolve, deleteSolve, navigate } = useStore();
   const { settings, timerConfig: cfg } = data;
   const [phase, setPhase] = useState<Phase>('idle');
   const [display, setDisplay] = useState(0);
   const [inspectLeft, setInspectLeft] = useState(0);
   const [lastId, setLastId] = useState<string | null>(null);
-  const [scope, setScope] = useState<'lock' | 'all'>('lock');
+  const [setupOpen, setSetupOpen] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const [detail, setDetail] = useState<SolveRecord | null>(null);
   const [noteFor, setNoteFor] = useState<SolveRecord | null>(null);
-  const [showMic, setShowMic] = useState(false);
 
   const startAt = useRef(0);
   const inspectStart = useRef(0);
@@ -40,13 +40,11 @@ export function TimerPage() {
   const required = settings.requireTwoFingers ? 2 : 1;
 
   const lock = data.locks.find((l) => l.id === cfg.lockId) ?? null;
-  const picks = data.tools.filter((t) => t.category === 'pick' || t.category === 'rake' || t.category === 'special');
-  const tensions = data.tools.filter((t) => t.category === 'tension');
 
   const scoped = useMemo(() => {
-    const list = scope === 'lock' && cfg.lockId ? data.solves.filter((s) => s.lockId === cfg.lockId) : data.solves;
+    const list = cfg.lockId ? data.solves.filter((s) => s.lockId === cfg.lockId) : data.solves;
     return [...list].sort((a, b) => a.date - b.date);
-  }, [data.solves, scope, cfg.lockId]);
+  }, [data.solves, cfg.lockId]);
   const stats = useMemo(() => summarize(scoped), [scoped]);
   const last = lastId ? (data.solves.find((s) => s.id === lastId) ?? null) : null;
 
@@ -230,54 +228,31 @@ export function TimerPage() {
     return 0;
   })();
 
+  const avg5 = stats.averages[0];
+  const shown = showAll ? recent : recent.slice(0, 5);
+  const pick = data.tools.find((t) => t.id === cfg.pickId);
+
   return (
     <div>
       <PageHeader title="Stopky" />
 
-      {/* Config – iOS grouped list */}
-      <ListGroup>
-        <SelectRow
-          icon="lock"
-          color={IOS.orange}
-          title="Zámek"
-          placeholder="bez zámku"
-          value={cfg.lockId ?? ''}
-          onChange={(v) => setTimerConfig({ lockId: v || null })}
-          options={data.locks.map((l) => ({ value: l.id, label: `${l.brand} ${l.name}` }))}
-        />
-        <SelectRow
-          icon="edit"
-          color={IOS.blue}
-          title="Planžeta"
-          value={cfg.pickId ?? ''}
-          onChange={(v) => setTimerConfig({ pickId: v || null })}
-          options={picks.map((t) => ({ value: t.id, label: `${t.name} · ${t.thickness}"` }))}
-        />
-        <SelectRow
-          icon="wrench"
-          color={IOS.green}
-          title="Napínák"
-          value={cfg.tensionId ?? ''}
-          onChange={(v) => setTimerConfig({ tensionId: v || null })}
-          options={tensions.map((t) => ({ value: t.id, label: `${t.name.includes(t.position) ? '' : `${t.position} `}${t.name} · ${t.thickness}"` }))}
-        />
-        <div className="px-4 py-2.5">
-          <Segmented<Technique> value={cfg.technique} onChange={(v) => setTimerConfig({ technique: v })} options={TECHNIQUES.map((t) => ({ id: t.id, label: t.label }))} />
-        </div>
-      </ListGroup>
-      {lock && (
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 px-4 text-[13px] text-slate-400">
-          <BeltBadge belt={lock.belt} size="sm" />
-          <span>
-            {lock.pins} pinů · {lock.pinConfig.filter((p) => p.type !== 'standard' && p.type !== 'unknown').length} bezpečnostních
+      {/* What am I training on – one row, details in a sheet */}
+      <button type="button" onClick={() => setSetupOpen(true)} className="card flex w-full items-center gap-3 px-4 py-3 text-left transition active:opacity-70">
+        <IconTile icon="lock" color={IOS.orange} size={40} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[17px] font-semibold text-slate-50">{lock ? `${lock.brand} ${lock.name}` : 'Vyber zámek'}</span>
+          <span className="block truncate text-[13px] text-slate-400">
+            {pick ? pick.name : 'bez planžety'} · {cfg.technique}
+            {settings.audioTrigger ? ' · mikrofon' : ''}
           </span>
-          {lock.bindingOrder.length > 0 && <span className="font-mono">pořadí {lock.bindingOrder.join("→")}</span>}
-        </div>
-      )}
+        </span>
+        {lock && <BeltBadge belt={lock.belt} size="sm" />}
+        <Icon name="chevronRight" size={16} strokeWidth={2.6} className="shrink-0 text-slate-600" />
+      </button>
 
       {/* Stackmat pad with ring dial */}
       <div
-        className={`card no-select touch-none relative mt-4 flex h-[44vh] min-h-[300px] cursor-pointer flex-col items-center justify-center transition-colors duration-150 ${
+        className={`card no-select touch-none relative mt-3 flex h-[42vh] min-h-[300px] cursor-pointer flex-col items-center justify-center transition-colors duration-150 ${
           phase === 'ready' ? 'bg-ok/10' : phase === 'holding' ? 'bg-bad/[0.07]' : ''
         }`}
         onPointerDown={onPadDown}
@@ -335,7 +310,7 @@ export function TimerPage() {
             <Button size="sm" variant={last.penalty === 'DNF' ? 'danger' : 'steel'} onClick={() => setPenalty(last, 'DNF')}>
               DNF
             </Button>
-            <Button size="sm" icon="note" onClick={() => setNoteFor(last)}>
+            <Button size="sm" icon="note" onClick={() => setNoteFor(last)} aria-label="Poznámka">
               {last.note ? 'upravit' : ''}
             </Button>
             <Button
@@ -354,94 +329,24 @@ export function TimerPage() {
         )}
       </AnimatePresence>
 
-      {/* Averages */}
-      <SectionTitle
-        action={
-          <Segmented
-            size="sm"
-            value={scope}
-            onChange={setScope}
-            options={[
-              { id: 'lock', label: 'Tento zámek' },
-              { id: 'all', label: 'Vše' },
-            ]}
-          />
-        }
-      >
-        Průměry
-      </SectionTitle>
-      <div className="grid grid-cols-2 gap-2">
-        {stats.averages.map((a) => (
-          <div key={a.n} className="card px-3.5 py-3">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="text-[13px] font-medium text-slate-400">Průměr z {a.n}</span>
-              <span className="text-[12px] text-slate-500">Ao{a.n}</span>
-            </div>
-            <div className="mt-0.5 font-mono text-[22px] font-semibold text-slate-50">{formatTime(a.current)}</div>
-            <div className="text-[12px] text-slate-500">nejlépe {formatTime(a.best)}</div>
-          </div>
-        ))}
+      {/* Three numbers that matter; the rest lives in Statistiky */}
+      <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+        <QuickStat label="Rekord" value={formatTime(stats.best)} accent />
+        <QuickStat label="Průměr z 5" value={formatTime(avg5?.current ?? NaN)} />
+        <QuickStat label="Otevřeno" value={`${stats.solved}/${stats.count}`} />
       </div>
-      <div className="mt-2 grid grid-cols-3 gap-2 text-center">
-        <div className="card px-2 py-2.5">
-          <div className="text-[13px] text-slate-400">Rekord</div>
-          <div className="font-mono text-[17px] font-semibold text-brass-500">{formatTime(stats.best)}</div>
-        </div>
-        <div className="card px-2 py-2.5">
-          <div className="text-[13px] text-slate-400">Průměr</div>
-          <div className="font-mono text-[17px] font-semibold text-slate-50">{formatTime(stats.mean)}</div>
-        </div>
-        <div className="card px-2 py-2.5">
-          <div className="text-[13px] text-slate-400">Otevřeno</div>
-          <div className="font-mono text-[17px] font-semibold text-slate-50">
-            {stats.solved}/{stats.count}
-          </div>
-        </div>
-      </div>
+      <button type="button" onClick={() => navigate('stats')} className="mt-2 flex w-full items-center justify-center gap-1 py-2 text-[15px] text-brass-500 active:opacity-50">
+        Průměry a grafy ve Statistikách <Icon name="chevronRight" size={15} strokeWidth={2.6} />
+      </button>
 
-      {/* Mic trigger */}
-      <Card className="mt-3 p-3.5">
-        <button className="flex w-full items-center justify-between" onClick={() => setShowMic((v) => !v)}>
-          <span className="inline-flex items-center gap-2 text-sm font-semibold">
-            <IconTile icon="mic" color={IOS.red} /> <span className="text-[16px] font-normal text-slate-50">Zastavení zvukem</span>
-            <span className={`rounded-full px-2 py-0.5 text-[12px] ${settings.audioTrigger ? 'bg-ok/15 text-emerald-300' : 'bg-fill text-slate-400'}`}>{settings.audioTrigger ? 'zapnuto' : 'vypnuto'}</span>
-          </span>
-          <Icon name="chevronDown" size={16} className={showMic ? 'rotate-180' : ''} />
-        </button>
-        {showMic && (
-          <div className="mt-3">
-            <p className="mb-3 text-xs text-slate-400">
-              Mikrofon zachytí ostré cvaknutí třmenu visacího zámku a stopky se samy zastaví. Nastav práh tak, aby ho běžný hluk nepřekročil.
-            </p>
-            <Button size="sm" variant={settings.audioTrigger ? 'danger' : 'ok'} icon="mic" onClick={() => updateSettings({ audioTrigger: !settings.audioTrigger })}>
-              {settings.audioTrigger ? 'Vypnout mikrofon' : 'Zapnout mikrofon'}
-            </Button>
-            {mic.status === 'denied' && <p className="mt-2 text-xs text-red-300">Přístup k mikrofonu byl odepřen.</p>}
-            {mic.status === 'unsupported' && <p className="mt-2 text-xs text-red-300">Prohlížeč nepodporuje mikrofon.</p>}
-            <div className="mt-3">
-              <div className="mb-1 flex justify-between text-xs">
-                <span className="text-slate-400">Citlivost (práh)</span>
-                <span className="font-mono text-brass-300">{Math.round(settings.audioThreshold * 100)} %</span>
-              </div>
-              <div className="relative h-3 overflow-hidden rounded-full bg-well">
-                <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-ok via-brass-500 to-bad transition-[width] duration-75" style={{ width: `${mic.level * 100}%` }} />
-                <div className="absolute inset-y-0 w-0.5 bg-white" style={{ left: `${settings.audioThreshold * 100}%` }} />
-              </div>
-              <input type="range" className="slider mt-2 w-full" min={0.15} max={0.98} step={0.01} value={settings.audioThreshold} onChange={(e) => updateSettings({ audioThreshold: +e.target.value })} />
-            </div>
-          </div>
-        )}
-      </Card>
-
-      {/* Solve list */}
-      <SectionTitle sub={scope === 'lock' && lock ? `${lock.brand} ${lock.name}` : 'Všechny zámky'}>Historie ({scoped.length})</SectionTitle>
+      {/* Recent attempts */}
+      <SectionTitle sub={lock ? `${lock.brand} ${lock.name}` : 'Všechny zámky'}>Poslední pokusy</SectionTitle>
       {recent.length === 0 ? (
         <Card className="px-4 py-6 text-center text-[15px] text-slate-400">Zatím žádné časy. Podrž stopky a jdi na to!</Card>
       ) : (
         <Card className="divide-y divide-sep">
-          {recent.map((s, i) => {
+          {shown.map((s, i) => {
             const n = scoped.length - i;
-            const l = data.locks.find((x) => x.id === s.lockId);
             const isPb = Number.isFinite(effectiveTime(s)) && effectiveTime(s) === stats.best;
             return (
               <button key={s.id} className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-fill-strong" onClick={() => setDetail(s)}>
@@ -451,7 +356,6 @@ export function TimerPage() {
                   {isPb && <Icon name="star" size={13} strokeWidth={2.6} />}
                 </span>
                 <span className="flex flex-1 items-center gap-1.5 truncate text-[13px] text-slate-400">
-                  {scope === 'all' && l ? `${l.name} · ` : ''}
                   {s.technique}
                   {s.source === 'audio' && <Icon name="mic" size={13} />}
                   {s.source === 'gauntlet' && <Icon name="flag" size={13} />}
@@ -461,8 +365,15 @@ export function TimerPage() {
               </button>
             );
           })}
+          {recent.length > 5 && (
+            <button className="w-full px-4 py-3 text-center text-[15px] text-brass-500" onClick={() => setShowAll((v) => !v)}>
+              {showAll ? 'Zobrazit méně' : `Zobrazit všechny (${recent.length})`}
+            </button>
+          )}
         </Card>
       )}
+
+      <SetupSheet open={setupOpen} onClose={() => setSetupOpen(false)} micLevel={mic.level} micStatus={mic.status} />
 
       {/* Full-screen running hitbox */}
       <AnimatePresence>
@@ -592,6 +503,101 @@ function NoteSheet({ solve, onClose }: { solve: SolveRecord | null; onClose: () 
           </button>
         ))}
       </div>
+    </Sheet>
+  );
+}
+
+function QuickStat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div className="card px-2 py-2.5">
+      <div className="text-[13px] text-slate-400">{label}</div>
+      <div className={`font-mono text-[19px] font-semibold ${accent ? 'text-brass-500' : 'text-slate-50'}`}>{value}</div>
+    </div>
+  );
+}
+
+/** Lock, tools, technique and the microphone stop – everything that is set once per session. */
+function SetupSheet({ open, onClose, micLevel, micStatus }: { open: boolean; onClose: () => void; micLevel: number; micStatus: string }) {
+  const { data, setTimerConfig, updateSettings, navigate } = useStore();
+  const { settings, timerConfig: cfg } = data;
+  const lock = data.locks.find((l) => l.id === cfg.lockId) ?? null;
+  const picks = data.tools.filter((t) => t.category === 'pick' || t.category === 'rake' || t.category === 'special');
+  const tensions = data.tools.filter((t) => t.category === 'tension');
+  return (
+    <Sheet open={open} onClose={onClose} title="Na čem trénuješ" footer={<Button variant="brass" className="w-full" onClick={onClose}>Hotovo</Button>}>
+      <ListGroup>
+        <SelectRow
+          icon="lock"
+          color={IOS.orange}
+          title="Zámek"
+          placeholder="bez zámku"
+          value={cfg.lockId ?? ''}
+          onChange={(v) => setTimerConfig({ lockId: v || null })}
+          options={data.locks.map((l) => ({ value: l.id, label: `${l.brand} ${l.name}` }))}
+        />
+        <SelectRow
+          icon="pick"
+          color={IOS.blue}
+          title="Planžeta"
+          value={cfg.pickId ?? ''}
+          onChange={(v) => setTimerConfig({ pickId: v || null })}
+          options={picks.map((t) => ({ value: t.id, label: `${t.name} · ${t.thickness}"` }))}
+        />
+        <SelectRow
+          icon="tension"
+          color={IOS.green}
+          title="Napínák"
+          value={cfg.tensionId ?? ''}
+          onChange={(v) => setTimerConfig({ tensionId: v || null })}
+          options={tensions.map((t) => ({ value: t.id, label: `${t.name.includes(t.position) ? '' : `${t.position} `}${t.name} · ${t.thickness}"` }))}
+          last
+        />
+      </ListGroup>
+      {lock && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 px-4 text-[13px] text-slate-400">
+          <BeltBadge belt={lock.belt} size="sm" />
+          <span>
+            {lock.pins} pinů · {lock.pinConfig.filter((p) => p.type !== 'standard' && p.type !== 'unknown').length} bezpečnostních
+          </span>
+          {lock.bindingOrder.length > 0 && <span className="font-mono">pořadí {lock.bindingOrder.join('→')}</span>}
+        </div>
+      )}
+      {data.locks.length === 0 && (
+        <button
+          className="mt-2 px-4 text-[15px] text-brass-500"
+          onClick={() => {
+            onClose();
+            navigate('gear');
+          }}
+        >
+          Přidat první zámek ve Výbavě
+        </button>
+      )}
+
+      <GroupLabel>Technika</GroupLabel>
+      <Segmented<Technique> value={cfg.technique} onChange={(v) => setTimerConfig({ technique: v })} options={TECHNIQUES.map((t) => ({ id: t.id, label: t.label }))} />
+
+      <GroupLabel>Zastavení zvukem</GroupLabel>
+      <ListGroup>
+        <ListRow icon="mic" color={IOS.red} title="Mikrofon" sub="Cvaknutí třmenu stopky zastaví samo" last={!settings.audioTrigger}>
+          <Switch checked={settings.audioTrigger} onChange={(v) => updateSettings({ audioTrigger: v })} label="Mikrofon" />
+        </ListRow>
+        {settings.audioTrigger && (
+          <div className="px-4 py-3">
+            {micStatus === 'denied' && <p className="mb-2 text-[13px] text-red-300">Přístup k mikrofonu byl odepřen.</p>}
+            {micStatus === 'unsupported' && <p className="mb-2 text-[13px] text-red-300">Prohlížeč nepodporuje mikrofon.</p>}
+            <div className="mb-1 flex justify-between text-[13px]">
+              <span className="text-slate-400">Citlivost (práh)</span>
+              <span className="font-mono text-brass-500">{Math.round(settings.audioThreshold * 100)} %</span>
+            </div>
+            <div className="relative h-3 overflow-hidden rounded-full bg-well">
+              <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-ok via-brass-500 to-bad transition-[width] duration-75" style={{ width: `${micLevel * 100}%` }} />
+              <div className="absolute inset-y-0 w-0.5 bg-slate-50" style={{ left: `${settings.audioThreshold * 100}%` }} />
+            </div>
+            <input type="range" aria-label="Práh" className="slider mt-3 w-full" min={0.15} max={0.98} step={0.01} value={settings.audioThreshold} onChange={(e) => updateSettings({ audioThreshold: +e.target.value })} />
+          </div>
+        )}
+      </ListGroup>
     </Sheet>
   );
 }

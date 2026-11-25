@@ -32,11 +32,11 @@
   --color-sep: rgba(60, 60, 67, 0.17);
   --color-seg: #ffffff;
   --color-bar: rgba(249, 249, 249, 0.9);
-  --color-brass-200: #007aff;
-  --color-brass-300: #007aff;
-  --color-brass-400: #007aff;
-  --color-brass-500: #007aff;
-  --color-brass-600: #0062cc;
+  --color-brass-200: var(--tint);
+  --color-brass-300: var(--tint);
+  --color-brass-400: var(--tint);
+  --color-brass-500: var(--tint);
+  --color-brass-600: var(--tint-press);
   --color-azure-400: #0071a4;
   --color-emerald-200: #248a3d;
   --color-emerald-300: #248a3d;
@@ -97,11 +97,7 @@
   --color-sep: rgba(84, 84, 88, 0.6);
   --color-seg: #636366;
   --color-bar: rgba(22, 22, 24, 0.88);
-  --color-brass-200: #409cff;
-  --color-brass-300: #409cff;
-  --color-brass-400: #409cff;
-  --color-brass-500: #0a84ff;
-  --color-brass-600: #0071e3;
+  --tint: var(--tint-d);
   --color-azure-400: #64d2ff;
   --color-emerald-200: #30d158;
   --color-emerald-300: #30d158;
@@ -154,11 +150,7 @@
   --color-sep: rgba(84, 84, 88, 0.6);
   --color-seg: #636366;
   --color-bar: rgba(22, 22, 24, 0.88);
-  --color-brass-200: #409cff;
-  --color-brass-300: #409cff;
-  --color-brass-400: #409cff;
-  --color-brass-500: #0a84ff;
-  --color-brass-600: #0071e3;
+  --tint: var(--tint-d);
   --color-azure-400: #64d2ff;
   --color-emerald-200: #30d158;
   --color-emerald-300: #30d158;
@@ -188,6 +180,11 @@
 
 :root {
   color-scheme: light;
+  /* Each tab has its own tint (section colour); --tint follows the theme. */
+  --tint-l: #007aff;
+  --tint-d: #0a84ff;
+  --tint: var(--tint-l);
+  --tint-press: color-mix(in srgb, var(--tint) 82%, #000);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -198,6 +195,23 @@
   :root[data-theme='system'] {
     color-scheme: dark;
   }
+}
+
+:root[data-section='library'] {
+  --tint-l: #e8650a;
+  --tint-d: #f5870a;
+}
+:root[data-section='arcade'] {
+  --tint-l: #9f45d6;
+  --tint-d: #bf5af2;
+}
+:root[data-section='stats'] {
+  --tint-l: #e0244e;
+  --tint-d: #ff375f;
+}
+:root[data-section='gear'] {
+  --tint-l: #0b8aa3;
+  --tint-d: #32adc8;
 }
 
 html,
