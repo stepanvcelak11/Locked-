@@ -9,7 +9,8 @@ import { COMPAT, EXTRA_TOOLS, LOCK_KINDS, fitOf, type Fit } from '../../data/com
 import { ToolArt, ToolMotionDemo } from '../../components/svg/ToolArt';
 import { Cutaway, GlossaryArt, PinProfile, P } from '../../components/svg/Diagrams';
 import { BindingOrderDemo, ShearLineDemo } from './PhysicsDemos';
-import { EXPLAINERS, LockThumb, PICK, SceneCard, WRENCH } from '../../components/svg/LockExplainers';
+import { DropScene, EXPLAINERS, GapsScene, LockThumb, LoopFigure, OversetScene, PICK, SceneCard, TensionScene, WRENCH } from '../../components/svg/LockExplainers';
+import { PROBLEMS, type Problem, type ProblemAnim } from '../../data/troubleshoot';
 import { IOS } from '../../lib/colors';
 import { GUIDES, type Guide } from '../../data/guides';
 import type { Mechanism, PinType, ToolProfile } from '../../types';
@@ -64,21 +65,24 @@ export function EncyclopediaPage() {
     });
 
   useEffect(() => {
-    if (intent?.tab === 'library' && intent.library) {
-      setSection(intent.library);
+    if (intent?.tab === 'library' && (intent.library || intent.root)) {
+      setSection(intent.root ? null : intent.library!);
       consumeIntent();
     }
   }, [intent, consumeIntent]);
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
-    if (section && !section.startsWith('g:')) markDone(section);
+    if (section && !section.startsWith('g:') && !section.startsWith('help')) markDone(section);
   }, [section]);
 
   const guide = section?.startsWith('g:') ? GUIDES.find((g) => g.id === section.slice(2)) : undefined;
   const cur = SECTIONS.find((s) => s.id === section);
 
   if (guide) return <GuideView guide={guide} onBack={() => setSection(null)} onDone={() => markDone(`g:${guide.id}`)} />;
+  if (section === 'help') return <HelpIndex onBack={() => setSection(null)} onOpen={(id) => setSection(`help:${id}`)} />;
+  const problem = section?.startsWith('help:') ? PROBLEMS.find((p) => p.id === section.slice(5)) : undefined;
+  if (problem) return <ProblemView problem={problem} onBack={() => setSection('help')} onGuide={(id) => setSection(`g:${id}`)} />;
 
   if (!cur) {
     const doneCount = PATH.filter((p) => done.includes(p.ref)).length;
@@ -128,6 +132,14 @@ export function EncyclopediaPage() {
             );
           })}
         </div>
+
+        <GroupLabel>Něco nejde?</GroupLabel>
+        <ListGroup>
+          {PROBLEMS.slice(0, 4).map((p) => (
+            <ListRow key={p.id} icon={p.icon} color={p.color} title={p.title} onClick={() => setSection(`help:${p.id}`)} />
+          ))}
+          <ListRow icon="help" color={IOS.gray} title={`Všechny problémy (${PROBLEMS.length})`} sub="Co dělat, když to nejde" onClick={() => setSection('help')} last />
+        </ListGroup>
 
         <GroupLabel>Návody krok za krokem</GroupLabel>
         <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1 scrollbar-none">
@@ -182,6 +194,157 @@ export function EncyclopediaPage() {
       {cur.id === 'belts' && <Belts />}
       {cur.id === 'ethics' && <Ethics />}
       {cur.id === 'glossary' && <Glossary />}
+    </motion.div>
+  );
+}
+
+/* ───────────────────────── Troubleshooting ───────────────────────── */
+
+const PROBLEM_ANIM: Record<ProblemAnim, { render: (t: number) => ReactNode; ms: number; still: number }> = {
+  overset: { render: (t) => <OversetScene t={t} />, ms: 9000, still: 0.15 },
+  gaps: { render: (t) => <GapsScene t={t} />, ms: 6000, still: 0.8 },
+  drop: { render: (t) => <DropScene t={t} />, ms: 7000, still: 0.4 },
+  tension: { render: (t) => <TensionScene t={t} />, ms: 6000, still: 0.2 },
+};
+
+/** How a pin feels under light tension – the most useful diagnostic there is. */
+function FeelTable() {
+  const rows = [
+    { c: IOS.blue, k: 'Pruží', v: 'jde nahoru a tlačí zpátky', m: 'ještě není nastavené' },
+    { c: IOS.green, k: 'Volné', v: 'lehce se viklá, bez pružiny', m: 'je nastavené' },
+    { c: IOS.red, k: 'Tvrdé', v: 'nejde nahoru ani nepruží', m: 'tuhé – zvedni ho; když nepomůže, je přemačknuté' },
+  ];
+  return (
+    <div className="card overflow-hidden">
+      <div className="px-4 pb-1 pt-3.5">
+        <div className="text-[17px] font-semibold text-slate-50">Co cítíš na stavítku</div>
+        <p className="text-[13px] text-slate-400">Drž lehké napětí a planžetou se jemně dotkni každého stavítka.</p>
+      </div>
+      {rows.map((r, i) => (
+        <div key={r.k} className={`flex items-start gap-3 px-4 py-2.5 ${i ? 'border-t border-sep' : ''}`}>
+          <span className="mt-1 h-3 w-3 shrink-0 rounded-full" style={{ background: r.c }} />
+          <div className="min-w-0">
+            <div className="text-[15px] text-slate-50">
+              <b>{r.k}</b> <span className="text-slate-400">– {r.v}</span>
+            </div>
+            <div className="text-[14px] font-medium" style={{ color: r.c }}>
+              → {r.m}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function BackTo({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="-ml-1 mb-1 inline-flex items-center text-[17px] text-brass-500 active:opacity-50">
+      <Icon name="chevronLeft" size={22} strokeWidth={2.4} /> {label}
+    </button>
+  );
+}
+
+function HelpIndex({ onBack, onOpen }: { onBack: () => void; onOpen: (id: string) => void }) {
+  return (
+    <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 38 }}>
+      <BackTo label="Návody" onClick={onBack} />
+      <PageHeader title="Něco nejde?" subtitle="Vyber, co se ti děje" />
+      <FeelTable />
+      <GroupLabel>Nejčastější problémy</GroupLabel>
+      <ListGroup>
+        {PROBLEMS.map((p, i) => (
+          <ListRow key={p.id} icon={p.icon} color={p.color} title={p.title} sub={p.short} onClick={() => onOpen(p.id)} last={i === PROBLEMS.length - 1} />
+        ))}
+      </ListGroup>
+    </motion.div>
+  );
+}
+
+function ProblemView({ problem: p, onBack, onGuide }: { problem: Problem; onBack: () => void; onGuide: (id: string) => void }) {
+  const { navigate } = useStore();
+  const [done, setDone] = useState<number[]>([]);
+  const anim = p.anim ? PROBLEM_ANIM[p.anim] : null;
+  return (
+    <motion.div key={p.id} initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 38 }}>
+      <BackTo label="Něco nejde?" onClick={onBack} />
+      <div className="mb-4 flex items-start gap-3 px-1">
+        <IconTile icon={p.icon} color={p.color} size={40} />
+        <h1 className="font-display text-[26px] font-bold leading-tight text-slate-50">{p.title}</h1>
+      </div>
+
+      {(anim || p.art) && (
+        <div className="card overflow-hidden">
+          {anim ? (
+            <LoopFigure render={anim.render} ms={anim.ms} still={anim.still} />
+          ) : (
+            <div className="bg-well p-3">
+              <GlossaryArt id={p.art!} />
+            </div>
+          )}
+        </div>
+      )}
+
+      <GroupLabel>Proč se to děje</GroupLabel>
+      <div className="card divide-y divide-sep">
+        {p.causes.map((c, i) => (
+          <div key={i} className="flex gap-3 px-4 py-3 text-[15px] leading-relaxed text-slate-300">
+            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-fill text-[13px] font-bold text-slate-400">{i + 1}</span>
+            <span>
+              {i === 0 && p.causes.length > 1 && <b className="text-slate-50">Nejčastěji: </b>}
+              {c}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <GroupLabel>Co udělat</GroupLabel>
+      <div className="card divide-y divide-sep">
+        {p.steps.map((st, i) => {
+          const ok = done.includes(i);
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setDone((d) => (ok ? d.filter((x) => x !== i) : [...d, i]))}
+              className="flex w-full gap-3 px-4 py-3 text-left text-[15px] leading-relaxed"
+            >
+              <span
+                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${ok ? 'border-transparent bg-ok text-white' : 'border-sep text-transparent'}`}
+              >
+                <Icon name="check" size={13} strokeWidth={3.2} />
+              </span>
+              <span className={ok ? 'text-slate-400 line-through decoration-slate-500/50' : 'text-slate-200'}>{st}</span>
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-1.5 px-4 text-[12px] text-slate-500">Klepnutím si odškrtni, co už máš vyzkoušené.</p>
+
+      {p.tip && (
+        <div className="mt-4 flex gap-2.5 rounded-2xl bg-brass-500/10 px-4 py-3 text-[15px] text-slate-200">
+          <Icon name="sparkles" size={18} className="mt-0.5 shrink-0 text-brass-500" />
+          <span>{p.tip}</span>
+        </div>
+      )}
+
+      <div className="mt-5 grid gap-2">
+        {p.practice && (
+          <Button variant="brass" size="lg" icon="gamepad" onClick={() => navigate('arcade', { arcade: 'simulator' })}>
+            Vyzkoušet v simulátoru
+          </Button>
+        )}
+        {p.id === 'false-set' && (
+          <Button icon="book" onClick={() => onGuide('spools')}>
+            Návod: Spool a falešné otevření
+          </Button>
+        )}
+        {(p.id === 'all-stiff' || p.id === 'drop') && (
+          <Button icon="book" onClick={() => onGuide('tension')}>
+            Návod: Správné napětí
+          </Button>
+        )}
+      </div>
     </motion.div>
   );
 }

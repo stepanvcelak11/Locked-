@@ -26,7 +26,8 @@ export function ArcadePage() {
   const [view, setView] = useState<ArcadeView | null>(null);
 
   useEffect(() => {
-    if (intent?.tab === 'arcade' && intent.arcade) setView(intent.arcade);
+    if (intent?.tab === 'arcade' && intent.root) setView(null);
+    else if (intent?.tab === 'arcade' && intent.arcade) setView(intent.arcade);
   }, [intent]);
 
   useEffect(() => {

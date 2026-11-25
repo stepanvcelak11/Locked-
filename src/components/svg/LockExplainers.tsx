@@ -1099,3 +1099,130 @@ export function SceneCard({ n, scene }: { n: number; scene: ExplainerScene }) {
     </div>
   );
 }
+
+/* ───────────────────────── troubleshooting scenes ───────────────────────── */
+
+/** One pin pushed too far looks almost right, but its key pin now blocks the plug. */
+export function OversetScene({ t }: { t: number }) {
+  const OV = 3;
+  const drop = sg(t, 0.32, 0.42);
+  const relift = sg(t, 0.52, 0.66);
+  const open = sg(t, 0.74, 0.8) * (1 - sg(t, 0.93, 0.99));
+  const ovLift = t < 0.32 ? TARGET[OV] + 7 : t < 0.52 ? lerp(TARGET[OV] + 7, 0, drop) : lerp(0, TARGET[OV], relift);
+  const ovSet = t >= 0.66;
+  const stacks: Stack[] = XS.map((_, i) =>
+    i === OV ? { lift: ovLift, drv: ovSet ? SH : undefined, glow: ovSet ? P.green : t < 0.32 ? P.red : undefined } : { lift: 0, drv: SH, glow: P.green },
+  );
+  const px = XS[OV];
+  const tipY = KW - (t >= 0.5 && t < 0.7 ? ovLift : t < 0.32 ? ovLift : 0);
+  const loosen = t >= 0.3 && t < 0.46;
+  return (
+    <Svg label="Přemačknuté stavítko">
+      <PinSide stacks={stacks} shift={0.8 * 3 + (ovSet ? 1 : 0) + open * 7} shear={ovSet ? P.green : P.shear}>
+        <path d={`M-20 105H${px - 9}Q${px - 2} 105 ${px - 1.5} ${tipY + 5}L${px} ${tipY}`} fill="none" stroke={PICK} strokeWidth={3.4} strokeLinecap="round" opacity={t >= 0.3 && t < 0.5 ? 0.35 : 1} />
+        <path d="M-6 116H26V104" fill="none" stroke={WRENCH} strokeWidth={4.5} strokeLinejoin="round" strokeLinecap="round" opacity={loosen ? 0.5 : 1} />
+        {t < 0.32 && <rect x={px - 11} y={SH - 3} width={22} height={6} rx={2} fill={P.red} opacity={0.5 + 0.4 * Math.sin(t * 50)} />}
+      </PinSide>
+      <ArcArrow cx={36} cy={108} r={16} a0={loosen ? 250 : 200} a1={loosen ? 200 : 250} color={WRENCH} opacity={loosen ? 1 : 0.6} />
+      {t < 0.3 && <Badge x={120} y={24} text="vypadá to dobře, ale zlaté trčí přes čáru" color={P.red} />}
+      {loosen && <Badge x={120} y={24} text="povol trochu napínák → spadne" color={WRENCH} />}
+      {t >= 0.46 && t < 0.7 && <Badge x={120} y={24} text="zvedni ho znovu, tentokrát méně" color={PICK} />}
+      {t >= 0.7 && <Badge x={120} y={24} text="mezera na čáře → otočí se" color="#1f9d47" />}
+    </Svg>
+  );
+}
+
+/** Lining up the pin tips is wrong; the gaps have to sit on the line. */
+export function GapsScene({ t }: { t: number }) {
+  const right = t >= 0.5;
+  const k = right ? sg(t, 0.5, 0.62) : 1 - sg(t, 0, 0.12) * 0;
+  const stacks: Stack[] = XS.map((_, i) => ({ lift: right ? lerp(10, TARGET[i], k) : 10 }));
+  return (
+    <Svg label="Na co se dívat v průhledném zámku">
+      <PinSide stacks={stacks} shear={right && k > 0.99 ? P.green : P.shear} blockFlash={right ? 0 : 0.7}>
+        {!right && <line x1={30} x2={214} y1={KW - 10} y2={KW - 10} stroke={P.red} strokeWidth={1.5} strokeDasharray="3 3" />}
+      </PinSide>
+      {!right && <Badge x={120} y={24} text="špatně: špičky stavítek v jedné řadě" color={P.red} />}
+      {right && <Badge x={120} y={24} text="správně: mezery mezi stavítky na čáře" color="#1f9d47" />}
+    </Svg>
+  );
+}
+
+/** Easing off the wrench while moving the pick lets the set pins fall. */
+export function DropScene({ t }: { t: number }) {
+  const bad = t < 0.5;
+  const tt = bad ? t / 0.5 : (t - 0.5) / 0.5;
+  const move = sg(tt, 0.15, 0.45);
+  const px = lerp(XS[1], XS[2], move);
+  const fall = bad ? sg(tt, 0.3, 0.5) : 0;
+  const stacks: Stack[] = XS.map((_, i) => {
+    if (i === 0 || i === 1) return fall > 0.5 ? { lift: 0, glow: P.red } : { lift: 0, drv: lerp(SH, KW - KEYLEN[i], fall), glow: P.green };
+    if (i === 2 && !bad) return { lift: TARGET[2] * sg(tt, 0.5, 0.75), glow: P.shear };
+    return { lift: 0 };
+  });
+  const loosen = bad && tt > 0.15 && tt < 0.6;
+  return (
+    <Svg label="Stavítka padají zpátky">
+      <PinSide stacks={stacks} shift={bad ? 1.6 * (1 - fall) : 1.6}>
+        <path d={`M-20 105H${px - 9}Q${px - 2} 105 ${px - 1.5} 101L${px} ${KW - (i2(bad, tt))}`} fill="none" stroke={PICK} strokeWidth={3.4} strokeLinecap="round" />
+        <path d="M-6 116H26V104" fill="none" stroke={WRENCH} strokeWidth={4.5} strokeLinejoin="round" strokeLinecap="round" opacity={loosen ? 0.4 : 1} transform={loosen ? 'translate(0 3)' : undefined} />
+      </PinSide>
+      {bad ? <Badge x={120} y={24} text={tt < 0.3 ? 'přesouváš planžetu…' : 'napínák povolil → stavítka spadla'} color={tt < 0.3 ? PICK : P.red} /> : <Badge x={120} y={24} text="napínák drží stejně → stavítka zůstanou" color="#1f9d47" />}
+    </Svg>
+  );
+}
+function i2(bad: boolean, tt: number) {
+  return bad ? 0 : TARGET[2] * sg(tt, 0.5, 0.75);
+}
+
+/** Too much tension binds everything; light tension leaves just one pin stiff. */
+export function TensionScene({ t }: { t: number }) {
+  const heavy = t < 0.5;
+  const tt = heavy ? t / 0.5 : (t - 0.5) / 0.5;
+  const px = XS[1];
+  const shake = heavy ? Math.sin(tt * 80) * 0.8 : 0;
+  const lift = heavy ? 0.6 + shake : TARGET[1] * sg(tt, 0.3, 0.7);
+  const stacks: Stack[] = XS.map((_, i) => {
+    if (heavy) return { lift: i === 1 ? Math.max(0, lift) : 0, glow: P.red };
+    if (i === 1) return { lift, glow: P.shear, drv: tt > 0.7 ? SH : undefined };
+    return { lift: Math.abs(Math.sin(tt * 20 + i)) * 2 };
+  });
+  return (
+    <Svg label="Moc velké napětí">
+      <PinSide stacks={stacks} shift={heavy ? 2.5 : 0.8}>
+        <path d={`M-20 105H${px - 9}Q${px - 2} 105 ${px - 1.5} 101L${px} ${KW - Math.max(0, lift)}`} fill="none" stroke={PICK} strokeWidth={3.4} strokeLinecap="round" />
+        <path d="M-6 116H26V104" fill="none" stroke={WRENCH} strokeWidth={heavy ? 6 : 4} strokeLinejoin="round" strokeLinecap="round" />
+      </PinSide>
+      <ArcArrow cx={36} cy={108} r={16} a0={190} a1={heavy ? 268 : 225} color={heavy ? P.red : WRENCH} w={heavy ? 3.4 : 2.2} />
+      {heavy ? <Badge x={120} y={24} text="moc síly: zaseknutá jsou všechna" color={P.red} /> : <Badge x={120} y={24} text="lehce: tuhé je jen jedno, to zvedni" color="#1f9d47" />}
+    </Svg>
+  );
+}
+
+/** Animated figure without the numbered caption (used by troubleshooting pages). */
+export function LoopFigure({ render, ms, still }: { render: (t: number) => ReactNode; ms: number; still: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setVisible(true);
+      return;
+    }
+    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { threshold: 0.25 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  const t = useLoop(ms, visible && !paused && !reduce);
+  return (
+    <div ref={ref} className="relative bg-well px-2 pt-2" onClick={() => setPaused((p) => !p)}>
+      {render(reduce ? still : t)}
+      <div className="h-[3px] bg-fill">
+        <div className="h-full bg-brass-500" style={{ width: `${(reduce ? 1 : t) * 100}%` }} />
+      </div>
+      {paused && <span className="absolute right-3 top-3 rounded-full bg-card px-2 py-0.5 text-[12px] font-semibold text-slate-300">pozastaveno</span>}
+    </div>
+  );
+}

@@ -24,6 +24,8 @@ export interface NavIntent {
   sim?: { spec?: SimLockSpec; pins?: number; spools?: number; serrated?: number; blind?: boolean; drillId?: string; tool?: string; label?: string };
   library?: string;
   gear?: 'locks' | 'tools';
+  /** re-tap on the active tab: go back to the section's first screen */
+  root?: boolean;
   stamp: number;
 }
 

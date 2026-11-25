@@ -27,7 +27,10 @@ export function BottomNav() {
           const active = tab === n.id;
           const go = () => {
             sound.unlock();
-            navigate(n.id);
+            if (active) {
+              navigate(n.id, { root: true });
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else navigate(n.id);
           };
           if (n.id === 'timer') {
             return (

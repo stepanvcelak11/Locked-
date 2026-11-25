@@ -28,7 +28,7 @@ export function specFromLock(l: LockItem): SimLockSpec {
 }
 
 export function SimulatorPanel() {
-  const { data, intent, consumeIntent, addChallenge, completeDrill, toast } = useStore();
+  const { data, intent, consumeIntent, addChallenge, completeDrill, toast, navigate } = useStore();
   const [pins, setPins] = useState(5);
   const [spools, setSpools] = useState(0);
   const [serrated, setSerrated] = useState(0);
@@ -194,6 +194,20 @@ export function SimulatorPanel() {
       </div>
         )}
       </div>
+      <button
+        type="button"
+        onClick={() => navigate('library', { library: 'help' })}
+        className="card mt-3 flex w-full items-center gap-3 p-3.5 text-left transition active:opacity-70"
+      >
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FF3B30] text-white">
+          <Icon name="help" size={18} />
+        </span>
+        <span className="flex-1">
+          <span className="block text-[15px] font-semibold text-slate-50">Nejde to?</span>
+          <span className="block text-[13px] text-slate-400">Vypadá nastavené a neotočí se, stavítka padají…</span>
+        </span>
+        <Icon name="chevronRight" size={16} strokeWidth={2.6} className="text-slate-600" />
+      </button>
       <Legend />
     </div>
   );

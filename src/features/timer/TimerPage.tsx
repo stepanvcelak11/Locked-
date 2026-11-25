@@ -335,9 +335,14 @@ export function TimerPage() {
         <QuickStat label="Průměr z 5" value={formatTime(avg5?.current ?? NaN)} />
         <QuickStat label="Otevřeno" value={`${stats.solved}/${stats.count}`} />
       </div>
-      <button type="button" onClick={() => navigate('stats')} className="mt-2 flex w-full items-center justify-center gap-1 py-2 text-[15px] text-brass-500 active:opacity-50">
-        Průměry a grafy ve Statistikách <Icon name="chevronRight" size={15} strokeWidth={2.6} />
-      </button>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <button type="button" onClick={() => navigate('library', { library: 'help' })} className="flex items-center justify-center gap-1 py-2 text-[15px] text-brass-500 active:opacity-50">
+          <Icon name="help" size={16} /> Nejde to?
+        </button>
+        <button type="button" onClick={() => navigate('stats')} className="flex items-center justify-center gap-1 py-2 text-[15px] text-brass-500 active:opacity-50">
+          Průměry a grafy <Icon name="chevronRight" size={15} strokeWidth={2.6} />
+        </button>
+      </div>
 
       {/* Recent attempts */}
       <SectionTitle sub={lock ? `${lock.brand} ${lock.name}` : 'Všechny zámky'}>Poslední pokusy</SectionTitle>
