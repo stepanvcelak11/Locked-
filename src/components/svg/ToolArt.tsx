@@ -2,79 +2,229 @@ import { motion } from 'framer-motion';
 import type { ToolProfile } from '../../types';
 import type { ToolGuide } from '../../data/library';
 
-/** Tip silhouettes, drawn tip-right at roughly 1:1 proportion of a 0.025" pick profile. */
-const TIP: Partial<Record<ToolProfile, string>> = {
-  'short-hook': 'M0 30H168Q176 30 178 24L180 15Q181 11 185 12L186 16Q184 26 181 32Q178 36 168 36H0Z',
-  'medium-hook': 'M0 30H164Q172 30 175 22L179 8Q180 4 184 5L185 9Q182 24 179 32Q176 36 164 36H0Z',
-  'deep-hook': 'M0 30H158Q168 30 172 18L177 -2Q178 -6 182 -5L183 -1Q179 22 175 32Q172 36 158 36H0Z',
-  'gonzo-hook': 'M0 30H160Q168 30 172 22L184 6Q186 3 189 5L189 9Q180 24 175 32Q172 36 160 36H0Z',
-  'half-diamond': 'M0 30H160L174 14L186 30Q188 36 180 36H0Z',
-  ball: 'M0 30H166Q168 18 177 18Q186 18 187 30Q187 36 180 36H0Z',
-  bogota: 'M0 30H120Q126 18 132 30Q138 18 144 30Q150 16 158 30Q162 36 156 36H0Z',
-  'city-rake': 'M0 30H112L118 20L124 26L130 16L138 24L144 14L152 22L158 22L164 30Q166 36 160 36H0Z',
-  snake: 'M0 30H112Q118 18 126 26Q134 34 142 22Q150 12 158 26Q162 34 168 30Q170 36 162 36H0Z',
-  'w-rake': 'M0 30H120L126 20L132 30L138 20L144 30L150 20L156 30L162 20L168 30Q170 36 164 36H0Z',
-  'batman-2': 'M0 30H112Q119 15 127 24Q133 30 139 22Q146 13 154 26L166 31Q170 33 166 35L154 40Q146 53 139 44Q133 36 127 42Q119 51 112 36H0Z',
-  'batman-3': 'M0 30H108Q113 15 120 24Q125 30 130 22Q136 13 142 24Q147 30 152 22Q158 13 165 26L174 31Q178 33 174 35L165 40Q158 53 152 44Q147 36 142 42Q136 53 130 44Q125 36 120 42Q113 51 108 36H0Z',
-  'double-ball': 'M0 30H148Q150 20 158 20Q166 20 167 28Q169 20 177 20Q186 20 186 30Q186 36 180 36H0Z',
-  'dimple-flag': 'M0 30H170V21H180V30Q184 30 184 33Q184 36 180 36H0Z',
-  'lever-pick': 'M0 30H158Q165 30 167 23L169 6Q170 2 174 3L175 7L173 24Q171 36 158 36H0Z',
-  'key-extractor': 'M0 30H120V25L128 30V25L136 30V25L144 30V25L152 30H170L184 33L170 36H0Z',
-  'comb-pick': 'M0 30H110V18H114V30H122V18H126V30H134V18H138V30H146V18H150V30H158V18H162V30H170Q182 30 182 36H0Z',
-  'bump-key': 'M0 24H110L116 33L122 24L128 33L134 24L140 33L146 24L152 33L158 24H174L186 31L174 40H0Z',
-  'disc-pick': 'M0 28H150V22H172V18H184V40H172V36H150V34H0Z',
-  'tubular-pick': 'M0 24H140V18H186V44H140V38H0Z',
-  'wafer-jiggler': 'M0 28H120L128 20H136L142 28L150 18H158L166 28L172 22L182 30V36H0Z',
-  'bypass-shim': 'M0 28H160Q186 28 186 40H176Q174 34 160 34H0Z',
-  'plug-spinner': 'M0 26H120V22H140V40H120V36H0ZM146 31a12 12 0 1 0 24 0a12 12 0 1 0 -24 0',
-  other: 'M0 30H170Q180 30 182 26L184 30Q182 36 170 36H0Z',
+/*
+ * Tool drawings traced from reference photos (SouthOrd, Peterson, Sparrows,
+ * HPC). A pick is a flat handle, a long thin shaft and a small tip; the tip is
+ * also shown magnified. Tip geometry is in "shaft units": the shaft centre line
+ * is y = 0, the shaft is ~3 units thick, the tip region runs x = 0…22 and
+ * features rise towards negative y.
+ */
+
+const STEEL = '#8b93a1';
+const STEEL_DARK = '#5f6673';
+const SW = 3; // shaft thickness
+
+/** Strip bent into a wave of n humps (Bogota / snake / S-rake are bent strips, not bumps on a flat bar). */
+function wave(n: number, len: number, up: number, down: number, start = 2, tail = 0) {
+  const end = len - 2;
+  const wl = (end - start) / n;
+  const pts: string[] = ['0,0', `${start},0`];
+  for (let x = start; x <= end + 0.01; x += 0.4) {
+    const ph = ((x - start) / wl) * Math.PI * 2;
+    const s = Math.sin(ph);
+    pts.push(`${x.toFixed(2)},${(-s * (s > 0 ? up : down)).toFixed(2)}`);
+  }
+  let d = `M${pts.join('L')}`;
+  if (tail) d += `Q${end + 1.6} 0 ${end + 2.2} ${-tail}`;
+  return d;
+}
+
+type Tip = { stroke?: string; fill?: string; w?: number; key?: boolean; sheet?: boolean };
+
+const TIPS: Record<string, Tip> = {
+  'short-hook': { stroke: 'M0 0H15Q19.5 0 19.8 -4L20 -5.6' },
+  'medium-hook': { stroke: 'M0 0H14Q19 0 19.4 -5.5L19.8 -9' },
+  'deep-hook': { stroke: 'M0 0H9Q15 0 17.5 -6Q19.5 -11 19.6 -15' },
+  'gonzo-hook': { stroke: 'M0 0H6Q10 0 12 2.2Q14 3.4 16 2.4Q19 0.5 19.6 -4L20 -7' },
+  'half-diamond': { stroke: 'M0 0H11', fill: 'M10 -1.5L15.6 -7.2L21.4 1.5H10Z' },
+  ball: { stroke: 'M0 0H15.5', fill: 'M15 1.5A4 4 0 1 1 22.5 0.2A4 4 0 0 1 15 1.5Z' },
+  'double-ball': { stroke: 'M0 0H9', fill: 'M8.4 1.4A3.3 3.3 0 1 1 14.6 0.6A3.3 3.3 0 1 1 20.8 0.4A3.3 3.3 0 1 1 14.6 0.6A3.3 3.3 0 0 1 8.4 1.4Z' },
+  bogota: { stroke: wave(3, 30, 4.6, 2.4, 2, 2) },
+  'batman-2': { stroke: wave(2, 24, 5, 2.6, 3, 2) },
+  snake: { stroke: wave(2, 24, 3, 3, 6, 3) },
+  'city-rake': { fill: 'M0 -1.5H3Q4 -1.5 4 -3.2Q5 -5 6 -3.2Q6.6 -2 7.4 -2Q8.4 -6.4 10 -6.2Q11.4 -6 11.6 -2.6Q12.4 -1.6 13.2 -3.6Q14.4 -5.4 15.6 -3.4Q16.3 -2 17 -2.4L18.4 -4.2L21.5 1.5H0Z' },
+  'w-rake': { fill: 'M0 -1.5H5L7 -5.4L9 -1.5L11 -5.4L13 -1.5L15 -5.4L17 -1.5L21.5 1.5H0Z' },
+  'wafer-jiggler': { key: true },
+  'bump-key': { key: true },
+  'dimple-flag': { stroke: 'M0 0H19.5V-5.5H21.6', w: 2.6 },
+  'lever-pick': { stroke: 'M0 0H14Q17.5 0 17.5 -3.5V-13', w: 3.6 },
+  'key-extractor': { fill: 'M0 -1.7H6L8.5 -3.1V-1.7H11L13.5 -3.1V-1.7H16L18.5 -3.1V-1.7H19L22.5 0L19 1.7H0Z' },
+  'comb-pick': { fill: 'M0 -2.2H2.6V-8.4H3.9V-2.2H5.6V-8.4H6.9V-2.2H8.6V-8.4H9.9V-2.2H11.6V-8.4H12.9V-2.2H14.6V-8.4H15.9V-2.2H17.6V-8.4H18.9V-2.2H20.4Q21.6 -2.2 21.6 0V2.2H0Z' },
+  'plug-spinner': { stroke: 'M0 0H18', fill: 'M17 -3.4H22V3.4H17Z' },
+  'disc-pick': { stroke: 'M0 0H17', fill: 'M16 -3.6H18.4V-1.2H22V1.2H18.4V3.6H16Z' },
+  'tubular-pick': { fill: 'M0 -5H20V5H0ZM20 -4.4H22.4V-3.4H20ZM20 -2.2H22.8V-1.2H20ZM20 0H22.2V1H20ZM20 2.2H22.6V3.2H20Z' },
+  'bypass-shim': { sheet: true },
+  other: { stroke: 'M0 0H18Q20.5 0 20.6 -2.6' },
 };
 
-export function ToolArt({ profile, className = '' }: { profile: ToolProfile; className?: string }) {
-  const id = `ta-${profile}`;
-  const isTension = profile === 'tok-bar' || profile === 'bok-wrench' || profile === 'twist-wrench';
-  const tall = profile === 'batman-2' || profile === 'batman-3';
+function TipShape({ profile, scale = 1, color = STEEL }: { profile: ToolProfile; scale?: number; color?: string }) {
+  const t = TIPS[profile] ?? TIPS.other;
   return (
-    <svg viewBox={isTension ? '-4 -10 200 56' : tall ? '64 4 130 58' : '64 -10 130 56'} className={className} aria-hidden="true">
-      <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#f1f5f9" />
-          <stop offset="0.5" stopColor="#94a3b8" />
-          <stop offset="1" stopColor="#475569" />
-        </linearGradient>
-      </defs>
-      {isTension ? (
-        profile === 'tok-bar' ? (
-          <g>
-            <path d="M10 10H150V18H10Z" fill={`url(#${id})`} stroke="#0f172a" strokeWidth={0.6} />
-            <path d="M150 10L186 10L186 18L150 18Z" fill={`url(#${id})`} stroke="#0f172a" strokeWidth={0.6} transform="skewX(-12) translate(4 0)" />
-            {Array.from({ length: 5 }).map((_, i) => (
-              <line key={i} x1={166 + i * 4} x2={164 + i * 4} y1={10} y2={18} stroke="#334155" />
-            ))}
-            <text x={80} y={36} fontSize={9} fill="#64748b" textAnchor="middle">
-              plochý, zaklíní se nahoře v profilu
-            </text>
-          </g>
-        ) : profile === 'bok-wrench' ? (
-          <g>
-            <path d="M10 6H24V30H160V36H18V6Z" fill={`url(#${id})`} stroke="#0f172a" strokeWidth={0.6} />
-            <path d="M160 30H180V22H186V36H160Z" fill={`url(#${id})`} stroke="#0f172a" strokeWidth={0.6} />
-          </g>
-        ) : (
-          <g>
-            <path d="M10 6H20V30H60Q70 22 80 30T100 30T120 30T140 30H180V36H14V6Z" fill={`url(#${id})`} stroke="#0f172a" strokeWidth={0.6} />
-          </g>
-        )
+    <g transform={`scale(${scale})`}>
+      {t.stroke && <path d={t.stroke} fill="none" stroke={color} strokeWidth={t.w ?? SW} strokeLinecap="round" strokeLinejoin="round" />}
+      {t.fill && <path d={t.fill} fill={color} />}
+    </g>
+  );
+}
+
+function Handle({ x, w }: { x: number; w: number }) {
+  return (
+    <g>
+      <rect x={x} y={20} width={w} height={16} rx={8} fill="#2f343c" />
+      <rect x={x + 6} y={22.5} width={w - 14} height={2.5} rx={1.2} fill="#fff" opacity={0.12} />
+      <circle cx={x + 9} cy={28} r={2} fill="#14171b" />
+    </g>
+  );
+}
+
+/** Key-shaped tools: try-out (jiggler) keys and bump keys. */
+function KeyTool({ profile }: { profile: ToolProfile }) {
+  const blade =
+    profile === 'bump-key'
+      ? 'M72 22H82L88 30L94 22L100 30L106 22L112 30L118 22L124 30L130 22H170L182 29L170 36H72Z'
+      : 'M72 24H90Q96 16 104 24Q112 32 120 22Q128 14 136 24Q144 32 152 24H170L182 29L170 36H72Z';
+  return (
+    <g>
+      <rect x={14} y={12} width={60} height={32} rx={10} fill={STEEL} />
+      <circle cx={30} cy={28} r={6} fill="var(--color-well)" />
+      <path d={blade} fill={STEEL} />
+      <line x1={78} x2={168} y1={31} y2={31} stroke={STEEL_DARK} strokeWidth={1} opacity={0.6} />
+    </g>
+  );
+}
+
+/** Tension tools are drawn whole – the bend is the point. */
+function TensionTool({ profile, caption = true }: { profile: ToolProfile; caption?: boolean }) {
+  if (profile === 'tok-bar') {
+    return (
+      <g>
+        <path d="M12 26H196V32H12Z" fill={STEEL} />
+        <path d="M196 26H214V40H208V32H196Z" fill={STEEL} />
+        {[0, 1, 2].map((i) => (
+          <line key={i} x1={209} x2={213} y1={34 + i * 2.2} y2={34 + i * 2.2} stroke={STEEL_DARK} strokeWidth={0.8} />
+        ))}
+        {caption && <Caption2 x={110} y={50}>
+          plochý prut, krátký zahnutý konec jde nahoru do otvoru
+        </Caption2>}
+      </g>
+    );
+  }
+  if (profile === 'bok-wrench') {
+    return (
+      <g>
+        <path d="M24 30H200" stroke={STEEL} strokeWidth={4} strokeLinecap="round" />
+        <path d="M200 30V44" stroke={STEEL} strokeWidth={4} strokeLinecap="round" />
+        <path d="M24 30V20Q24 16 28 16" fill="none" stroke={STEEL} strokeWidth={4} strokeLinecap="round" />
+        {caption && (
+          <Caption2 x={112} y={52}>
+            tvar L / Z – krátký konec jde dolů do otvoru
+          </Caption2>
+        )}
+      </g>
+    );
+  }
+  return (
+    <g>
+      <path d="M20 30H64" stroke={STEEL} strokeWidth={4} strokeLinecap="round" />
+      <path d="M64 30Q70 24 76 30T88 30T100 30T112 30T124 30" fill="none" stroke={STEEL} strokeWidth={3.4} strokeLinecap="round" />
+      <path d="M124 30H196V42" fill="none" stroke={STEEL} strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" />
+      {caption && (
+        <Caption2 x={112} y={52}>
+          zkroucený pružný prut s ohnutým koncem
+        </Caption2>
+      )}
+    </g>
+  );
+}
+
+function Caption2({ x, y, children }: { x: number; y: number; children: string }) {
+  return (
+    <text x={x} y={y} fontSize={7.5} fontWeight={600} fill="#8E8E93" textAnchor="middle" fontFamily="-apple-system, 'Inter Variable', sans-serif">
+      {children}
+    </text>
+  );
+}
+
+/**
+ * `full` – the whole tool in proportion plus a magnified tip;
+ * `tip` – just the tip, for small thumbnails.
+ */
+export function ToolArt({ profile, className = '', variant = 'full' }: { profile: ToolProfile; className?: string; variant?: 'full' | 'tip' }) {
+  const isTension = profile === 'tok-bar' || profile === 'bok-wrench' || profile === 'twist-wrench';
+  const tip = TIPS[profile] ?? TIPS.other;
+  if (isTension) {
+    return (
+      <svg viewBox={variant === 'tip' ? '0 8 224 40' : '0 0 224 56'} className={className} aria-hidden="true">
+        <TensionTool profile={profile} caption={variant === 'full'} />
+      </svg>
+    );
+  }
+  if (tip.key) {
+    return (
+      <svg viewBox="0 0 196 56" className={className} aria-hidden="true">
+        <KeyTool profile={profile} />
+      </svg>
+    );
+  }
+  if (tip.sheet) {
+    // padlock shim: a thin sheet curved to wrap round the shackle
+    return (
+      <svg viewBox="0 0 196 56" className={className} aria-hidden="true">
+        <path d="M60 10H120V40Q120 48 112 48H68Q60 48 60 40Z" fill={STEEL} />
+        <path d="M60 22H120" stroke={STEEL_DARK} strokeWidth={0.8} opacity={0.6} />
+        <path d="M120 18Q140 18 140 29Q140 40 120 40" fill="none" stroke={STEEL} strokeWidth={3} />
+        {variant === 'full' && <Caption2 x={98} y={8}>tenký plíšek ohnutý do tvaru třmenu</Caption2>}
+      </svg>
+    );
+  }
+  if (variant === 'tip') {
+    const long = profile === 'bogota' || profile === 'batman-2' || profile === 'snake';
+    return (
+      <svg viewBox={long ? '-6 -12 40 22' : '-12 -14 38 24'} className={className} aria-hidden="true">
+        <line x1={-14} x2={0.5} y1={0} y2={0} stroke={STEEL} strokeWidth={SW} />
+        <TipShape profile={profile} />
+      </svg>
+    );
+  }
+  // whole tool: handle, shaft, tip at 1:1 from x = 158, magnified tip in the circle
+  const special = profile === 'tubular-pick' || profile === 'disc-pick' || profile === 'plug-spinner';
+  return (
+    <svg viewBox="0 0 252 56" className={className} aria-hidden="true">
+      <Handle x={6} w={90} />
+      {special ? (
+        <path d="M96 25H158V31H96Z" fill={STEEL} />
       ) : (
+        <path d={`M96 26L112 ${28 - SW / 2}H158V${28 + SW / 2}H112L96 30Z`} fill={STEEL} />
+      )}
+      {profile === 'disc-pick' && (
         <g>
-          <rect x={-4} y={26} width={70} height={14} rx={6} fill="#0f172a" stroke="#eab308" strokeOpacity={0.6} />
-          <path d={TIP[profile] ?? TIP.other!} fill={`url(#${id})`} stroke="#0f172a" strokeWidth={0.6} fillRule="evenodd" />
-          <rect x={-4} y={26} width={70} height={14} rx={6} fill="#111827" stroke="#eab308" strokeOpacity={0.6} />
+          <rect x={98} y={12} width={14} height={32} rx={4} fill="#b9bfcb" stroke={STEEL_DARK} strokeWidth={0.8} />
+          {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+            <line key={i} x1={100 + i * 1.7} x2={100 + i * 1.7} y1={14} y2={42} stroke={STEEL_DARK} strokeWidth={0.5} />
+          ))}
         </g>
       )}
+      <g transform="translate(158 28)">
+        <TipShape profile={profile} />
+      </g>
+      {/* magnifier */}
+      <line x1={192} y1={24} x2={204} y2={18} stroke="#c7c7cc" strokeWidth={0.8} />
+      <line x1={192} y1={32} x2={204} y2={38} stroke="#c7c7cc" strokeWidth={0.8} />
+      <circle cx={226} cy={28} r={24} fill="var(--color-card)" stroke="#c7c7cc" strokeWidth={1} />
+      <clipPath id={`clip-${profile}`}>
+        <circle cx={226} cy={28} r={23} />
+      </clipPath>
+      <g clipPath={`url(#clip-${profile})`}>
+        <g transform={`translate(${long(profile) ? 203 : 208} 34)`}>
+          <line x1={-40} x2={0.5} y1={0} y2={0} stroke={STEEL} strokeWidth={SW * 1.55} />
+          <TipShape profile={profile} scale={long(profile) ? 1.45 : 1.6} />
+        </g>
+      </g>
     </svg>
   );
 }
+
+const long = (p: ToolProfile) => p === 'bogota' || p === 'batman-2' || p === 'snake';
 
 /** Mini cutaway showing the hand motion for a tool. */
 const C = {
@@ -211,8 +361,9 @@ export function ToolMotionDemo({ guide }: { guide: ToolGuide }) {
       ))}
       <line x1={30} x2={194} y1={52} y2={52} stroke={C.shear} strokeDasharray="4 3" />
       <motion.g animate={m} transition={{ ...repeat, times }} style={{ originX: '20px', originY: '92px' }}>
-        <g transform="translate(-118 62) scale(0.9)">
-          <path d={TIP[guide.profile] ?? TIP.other!} fill={C.tool} />
+        <g transform="translate(36 90) scale(1.5)">
+          <line x1={-60} x2={0.5} y1={0} y2={0} stroke={C.tool} strokeWidth={SW} />
+          <TipShape profile={guide.profile} color={C.tool} />
         </g>
       </motion.g>
       <path d="M22 104H44V96" fill="none" stroke={C.wrench} strokeWidth={4} strokeLinejoin="round" strokeLinecap="round" />

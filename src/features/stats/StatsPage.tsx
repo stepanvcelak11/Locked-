@@ -477,7 +477,7 @@ export function StatsPage() {
           toolUsage.map((t, i) => (
             <div key={t.id} className="flex items-center gap-3 rounded-2xl px-2.5 py-2">
               <div className="flex h-10 w-16 shrink-0 items-center justify-center rounded-xl bg-well px-1.5">
-                <ToolArt profile={t.profile} className="h-full w-full" />
+                <ToolArt profile={t.profile} variant="tip" className="h-full w-full" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">

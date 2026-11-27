@@ -41,7 +41,8 @@ export function migrate(raw: unknown): AppData {
     version: DATA_VERSION,
     ethicsAccepted: !!r.ethicsAccepted,
     locks: r.locks.map((l) => ({ ...l, pinConfig: l.pinConfig ?? [], bindingOrder: l.bindingOrder ?? [], notes: l.notes ?? '', formFactor: l.formFactor ?? 'padlock' })),
-    tools: r.tools.map((t) => ({ ...t, notes: t.notes ?? '', position: t.position ?? 'n/a' })),
+    // 'batman-3' was briefly its own profile; it is the triple-hump Bogota
+    tools: r.tools.map((t) => ({ ...t, profile: (t.profile as string) === 'batman-3' ? 'bogota' : t.profile, notes: t.notes ?? '', position: t.position ?? 'n/a' })),
     solves,
     challenges,
     settings: { ...defaultSettings, ...(r.settings ?? {}) },

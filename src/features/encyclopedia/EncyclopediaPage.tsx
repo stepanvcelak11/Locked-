@@ -458,7 +458,7 @@ function FitDot({ fit, size = 12 }: { fit: Fit; size?: number }) {
 const GROUPS: { id: ToolGuide['group'] | 'diamond'; label: string; tools: ToolProfile[] }[] = [
   { id: 'pick', label: 'Háky', tools: ['short-hook', 'medium-hook', 'deep-hook', 'gonzo-hook'] },
   { id: 'diamond', label: 'Diamant', tools: ['half-diamond', 'ball', 'double-ball'] },
-  { id: 'rake', label: 'Hrábě', tools: ['bogota', 'city-rake', 'snake', 'w-rake', 'batman-2', 'batman-3'] },
+  { id: 'rake', label: 'Hrábě', tools: ['bogota', 'city-rake', 'snake', 'w-rake', 'batman-2'] },
   { id: 'tension', label: 'Napínák', tools: ['tok-bar', 'bok-wrench', 'twist-wrench'] },
   { id: 'special', label: 'Speciál', tools: ['disc-pick', 'tubular-pick', 'wafer-jiggler', 'dimple-flag', 'lever-pick'] },
 ];
@@ -533,7 +533,7 @@ function Compat() {
                   {list.map((t, i) => (
                     <div key={t.profile} className="relative flex items-center gap-3 px-4 py-2.5">
                       <span className="flex h-10 w-16 shrink-0 items-center justify-center rounded-lg bg-well px-1">
-                        <ToolArt profile={t.profile} className="h-full w-full" />
+                        <ToolArt profile={t.profile} variant="tip" className="h-full w-full" />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block text-[16px] text-slate-50">{t.name}</span>
@@ -867,7 +867,7 @@ function ToolsCatalog() {
                   <span className="shrink-0 text-[15px] text-brass-500">{open ? 'Méně' : 'Více'}</span>
                 </div>
                 <div className="mt-3 rounded-xl bg-well px-3 py-2">
-                  <ToolArt profile={t.profile} className="h-12 w-full" />
+                  <ToolArt profile={t.profile} className="h-20 w-full" />
                 </div>
                 {good.length > 0 && (
                   <div className="mt-2.5 flex flex-wrap gap-1.5">

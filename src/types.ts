@@ -57,7 +57,6 @@ export type ToolProfile =
   | 'snake'
   | 'w-rake'
   | 'batman-2'
-  | 'batman-3'
   | 'double-ball'
   | 'tok-bar'
   | 'bok-wrench'

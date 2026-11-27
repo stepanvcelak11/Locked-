@@ -403,7 +403,7 @@ function Arsenal() {
                 return (
                   <Card key={t.id} onClick={() => setEdit(t)} className="p-3">
                     <div className="rounded-lg bg-well px-2 py-1">
-                      <ToolArt profile={t.profile} className="h-9 w-full" />
+                      <ToolArt profile={t.profile} className="h-14 w-full" />
                     </div>
                     <div className="mt-2 flex items-start justify-between gap-2">
                       <div>
@@ -482,7 +482,7 @@ function ToolForm({ value, onClose }: { value: (Omit<ToolItem, 'id' | 'createdAt
       }
     >
       <div className="mb-3 rounded-xl bg-well px-3 py-2">
-        <ToolArt profile={f.profile} className="h-12 w-full" />
+        <ToolArt profile={f.profile} className="h-20 w-full" />
       </div>
       <Field label="Kategorie">
         <Segmented
