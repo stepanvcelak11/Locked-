@@ -26,6 +26,9 @@ export const COMPAT: Record<ToolProfile, { fit: Row; note?: string }> = {
   'city-rake': { fit: { 'pin-tumbler': 2, wafer: 1 } },
   snake: { fit: { wafer: 2, 'pin-tumbler': 1 } },
   'w-rake': { fit: { wafer: 2, 'pin-tumbler': 1 } },
+  'batman-2': { fit: { wafer: 2, 'pin-tumbler': 1 }, note: 'Hrbolky nahoře i dole zaberou na lamely z obou stran.' },
+  'batman-3': { fit: { wafer: 2, 'pin-tumbler': 1 }, note: 'Delší verze pro zámky s více stavítky nebo lamelami.' },
+  'double-ball': { fit: { wafer: 2, 'pin-tumbler': 1 }, note: 'Dvě kuličky kloužou po lamelách a nezaseknou se.' },
   'tok-bar': { fit: { 'pin-tumbler': 2, dimple: 2, wafer: 1 }, note: 'Tenký TOK je jediná rozumná cesta do důlkových zámků.' },
   'bok-wrench': { fit: { 'pin-tumbler': 2, wafer: 2, dimple: 1, lever: 1 } },
   'twist-wrench': { fit: { 'pin-tumbler': 2, wafer: 1, dimple: 1 } },
@@ -34,13 +37,16 @@ export const COMPAT: Record<ToolProfile, { fit: Row; note?: string }> = {
   'wafer-jiggler': { fit: { wafer: 2 }, note: 'Sada zkušebních klíčů pro lamelové zámky.' },
   'bypass-shim': { fit: { 'pin-tumbler': 1, wafer: 1 }, note: 'Jen visací zámky – obchází mechanismus přes třmen.' },
   'plug-spinner': { fit: { 'pin-tumbler': 1, wafer: 1 }, note: 'Pomocník, když otevřeš špatným směrem.' },
+  'dimple-flag': { fit: { dimple: 2 }, note: 'Vlaječka na konci tlačí stavítka, která jdou z boku.' },
+  'lever-pick': { fit: { lever: 2 }, note: 'Spolu s napínákem na závoru.' },
+  'key-extractor': { fit: {}, note: 'Na vytažení úlomku klíče nebo planžety, ne na otevírání.' },
+  'comb-pick': { fit: { 'pin-tumbler': 1 }, note: 'Jen levné zámky s krátkými stavítky.' },
+  'bump-key': { fit: { 'pin-tumbler': 1 }, note: 'Musí odpovídat profilu zámku; anti-bump stavítka ho zastaví.' },
   other: { fit: {} },
 } as Record<ToolProfile, { fit: Row; note?: string }>;
 
 /** Specialised tools that exist but are not in the tool catalogue. */
 export const EXTRA_TOOLS: Partial<Record<Mechanism, string>> = {
-  dimple: 'Speciální důlkové planžety (flag picks) s ohnutou špičkou.',
-  lever: 'Dozický háček (lever/curtain pick) a napínák do klíčové dírky.',
   'disc-detainer': 'Planžeta s předním napínacím prvkem přesně pro daný zámek.',
 };
 

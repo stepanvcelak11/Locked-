@@ -457,10 +457,10 @@ function FitDot({ fit, size = 12 }: { fit: Fit; size?: number }) {
 
 const GROUPS: { id: ToolGuide['group'] | 'diamond'; label: string; tools: ToolProfile[] }[] = [
   { id: 'pick', label: 'Háky', tools: ['short-hook', 'medium-hook', 'deep-hook', 'gonzo-hook'] },
-  { id: 'diamond', label: 'Diamant', tools: ['half-diamond', 'ball'] },
-  { id: 'rake', label: 'Hrábě', tools: ['bogota', 'city-rake', 'snake', 'w-rake'] },
+  { id: 'diamond', label: 'Diamant', tools: ['half-diamond', 'ball', 'double-ball'] },
+  { id: 'rake', label: 'Hrábě', tools: ['bogota', 'city-rake', 'snake', 'w-rake', 'batman-2', 'batman-3'] },
   { id: 'tension', label: 'Napínák', tools: ['tok-bar', 'bok-wrench', 'twist-wrench'] },
-  { id: 'special', label: 'Speciál', tools: ['disc-pick', 'tubular-pick', 'wafer-jiggler'] },
+  { id: 'special', label: 'Speciál', tools: ['disc-pick', 'tubular-pick', 'wafer-jiggler', 'dimple-flag', 'lever-pick'] },
 ];
 const groupFit = (tools: ToolProfile[], lock: Exclude<Mechanism, 'other'>): Fit => Math.max(0, ...tools.map((t) => fitOf(t, lock))) as Fit;
 

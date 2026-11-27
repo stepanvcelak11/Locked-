@@ -56,6 +56,9 @@ export type ToolProfile =
   | 'city-rake'
   | 'snake'
   | 'w-rake'
+  | 'batman-2'
+  | 'batman-3'
+  | 'double-ball'
   | 'tok-bar'
   | 'bok-wrench'
   | 'twist-wrench'
@@ -64,6 +67,11 @@ export type ToolProfile =
   | 'wafer-jiggler'
   | 'bypass-shim'
   | 'plug-spinner'
+  | 'dimple-flag'
+  | 'lever-pick'
+  | 'key-extractor'
+  | 'comb-pick'
+  | 'bump-key'
   | 'other';
 
 export type ToolThickness = '0.015' | '0.018' | '0.020' | '0.022' | '0.025' | '0.030' | '0.035' | '0.040' | '0.050' | '0.062';

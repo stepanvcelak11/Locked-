@@ -60,6 +60,9 @@ export const TOOL_PROFILES: Record<ToolProfile, { label: string; category: ToolC
   'city-rake': { label: 'City Rake (L-Rake)', category: 'rake' },
   snake: { label: 'Snake / S-Rake', category: 'rake' },
   'w-rake': { label: 'W-Rake / Wave', category: 'rake' },
+  'batman-2': { label: 'Batman (2 vlny)', category: 'rake' },
+  'batman-3': { label: 'Batman (3 vlny)', category: 'rake' },
+  'double-ball': { label: 'Double Ball / Snowman', category: 'pick' },
   'tok-bar': { label: 'TOK Pry Bar', category: 'tension' },
   'bok-wrench': { label: 'BOK Z-Wrench', category: 'tension' },
   'twist-wrench': { label: 'Twist Flex Wrench', category: 'tension' },
@@ -68,6 +71,11 @@ export const TOOL_PROFILES: Record<ToolProfile, { label: string; category: ToolC
   'wafer-jiggler': { label: 'Jiggler / Wafer Pick', category: 'special' },
   'bypass-shim': { label: 'Shim / Bypass', category: 'special' },
   'plug-spinner': { label: 'Plug Spinner', category: 'special' },
+  'dimple-flag': { label: 'Důlková planžeta (flag)', category: 'special' },
+  'lever-pick': { label: 'Dozický háček', category: 'special' },
+  'key-extractor': { label: 'Vytahovák zlomených klíčů', category: 'special' },
+  'comb-pick': { label: 'Hřebínek (comb)', category: 'special' },
+  'bump-key': { label: 'Bump klíč', category: 'special' },
   other: { label: 'Jiný', category: 'special' },
 };
 
